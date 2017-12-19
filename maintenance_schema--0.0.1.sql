@@ -37,17 +37,19 @@ order by last_vacuum desc NULLS FIRST,last_analyze desc;
 
 -- report bloat approx 
 -- from check_postgres
+-- prettier with lower limit
 CREATE OR REPLACE VIEW maintenance_schema.report_bloat_approx AS
-SELECT current_database, schemaname, tablename, tbloat, wastedbytes/1024/1024 as tablewaste, iname, ibloat, wastedibytes/1024/1024 as indexwaste
-FROM (
-
+SELECT schemaname, tablename, tbloat, wastedbytes, iname, ibloat, wastedibytes
+FROM 
+(
 SELECT
-  current_database(), schemaname, tablename, 
+  schemaname, tablename, /*reltuples::bigint, relpages::bigint, otta,*/
   ROUND((CASE WHEN otta=0 THEN 0.0 ELSE sml.relpages::FLOAT/otta END)::NUMERIC,1) AS tbloat,
-  CASE WHEN relpages < otta THEN 0 ELSE bs*(sml.relpages-otta)::BIGINT END AS wastedbytes,
-  iname, 
+  pg_size_pretty(CASE WHEN relpages < otta THEN 0 ELSE bs*(sml.relpages-otta)::BIGINT END) AS wastedbytes,
+  iname, /*ituples::bigint, ipages::bigint, iotta,*/
   ROUND((CASE WHEN iotta=0 OR ipages=0 THEN 0.0 ELSE ipages::FLOAT/iotta END)::NUMERIC,1) AS ibloat,
-  CASE WHEN ipages < iotta THEN 0 ELSE bs*(ipages-iotta) END AS wastedibytes
+  pg_size_pretty(CASE WHEN ipages < iotta THEN 0 ELSE bs*(ipages-iotta)::numeric END) AS wastedibytes,
+  bs, relpages, otta, ipages, iotta
 FROM (
   SELECT
     schemaname, tablename, cc.reltuples, cc.relpages, bs,
@@ -84,13 +86,165 @@ FROM (
   JOIN pg_namespace nn ON cc.relnamespace = nn.oid AND nn.nspname = rs.schemaname AND nn.nspname <> 'information_schema'
   LEFT JOIN pg_index i ON indrelid = cc.oid
   LEFT JOIN pg_class c2 ON c2.oid = i.indexrelid
-) AS sml
-ORDER BY wastedbytes DESC
-) AS t1 
+) AS sml 
+) s
 WHERE (tbloat >1.0 OR ibloat >1.0 )
-AND (wastedbytes/1024/1024> 100 OR wastedibytes/1024/1024> 100)
+AND (bs*(s.relpages-otta)::BIGINT > 1000000 OR bs*(ipages-iotta)::numeric > 1000000)
 ;
 
+
+-- report bloat estimation from ioguix
+-- fillfactor and stats uptodate
+-- made it prettier
+-- This query is compatible with PostgreSQL 9.0 and more
+CREATE OR REPLACE VIEW maintenance_schema.report_tbloat_approx_fine AS
+SELECT 
+	schemaname, 
+	tblname, 
+	pg_size_pretty(bs*tblpages::numeric) AS real_size,
+    pg_size_pretty(((tblpages-est_tblpages)*bs)::bigint) AS extra_size,
+	  CASE WHEN tblpages - est_tblpages > 0
+		THEN round((100 * (tblpages - est_tblpages)/tblpages::float)::numeric,2)
+		ELSE 0
+	  END AS extra_ratio, 
+	  fillfactor, 
+	  pg_size_pretty(((tblpages-est_tblpages_ff)*bs)::numeric) AS bloat_size,
+	  CASE WHEN tblpages - est_tblpages_ff > 0
+		THEN round((100 * (tblpages - est_tblpages_ff)/tblpages::float)::numeric,2)
+		ELSE 0
+	  END AS bloat_ratio, 
+	  is_na
+FROM (
+  SELECT ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_tblpages,
+    ceil( reltuples / ( (bs-page_hdr)*fillfactor/(tpl_size*100) ) ) + ceil( toasttuples / 4 ) AS est_tblpages_ff,
+    tblpages, fillfactor, bs, tblid, schemaname, tblname, heappages, toastpages, is_na
+  FROM (
+    SELECT
+      ( 4 + tpl_hdr_size + tpl_data_size + (2*ma)
+        - CASE WHEN tpl_hdr_size%ma = 0 THEN ma ELSE tpl_hdr_size%ma END
+        - CASE WHEN ceil(tpl_data_size)::int%ma = 0 THEN ma ELSE ceil(tpl_data_size)::int%ma END
+      ) AS tpl_size, bs - page_hdr AS size_per_block, (heappages + toastpages) AS tblpages, heappages,
+      toastpages, reltuples, toasttuples, bs, page_hdr, tblid, schemaname, tblname, fillfactor, is_na
+    FROM (
+      SELECT
+        tbl.oid AS tblid, ns.nspname AS schemaname, tbl.relname AS tblname, tbl.reltuples,
+        tbl.relpages AS heappages, coalesce(toast.relpages, 0) AS toastpages,
+        coalesce(toast.reltuples, 0) AS toasttuples,
+        coalesce(substring(
+          array_to_string(tbl.reloptions, ' ')
+          FROM '%fillfactor=#"___#"%' FOR '#')::smallint, 100) AS fillfactor,
+        current_setting('block_size')::numeric AS bs,
+        CASE WHEN version()~'mingw32' OR version()~'64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END AS ma,
+        24 AS page_hdr,
+        23 + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
+          + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
+        sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
+        bool_or(att.atttypid = 'pg_catalog.name'::regtype)
+          OR count(att.attname) <> count(s.attname) AS is_na
+      FROM pg_attribute AS att
+        JOIN pg_class AS tbl ON att.attrelid = tbl.oid
+        JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace
+        LEFT JOIN pg_stats AS s ON s.schemaname=ns.nspname
+          AND s.tablename = tbl.relname AND s.inherited=false AND s.attname=att.attname
+        LEFT JOIN pg_class AS toast ON tbl.reltoastrelid = toast.oid
+      WHERE att.attnum > 0 AND NOT att.attisdropped
+        AND tbl.relkind = 'r'
+      GROUP BY 1,2,3,4,5,6,7,8,9,10, tbl.relhasoids
+      ORDER BY 2,3
+    ) AS s
+  ) AS s2
+) AS s3
+WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+AND ((tblpages-est_tblpages_ff)*bs <>0 OR tblpages - est_tblpages_ff > 0 )
+AND ((tblpages-est_tblpages)*bs) > 1000000;
+
+
+
+-- WARNING: executed with a non-superuser role, the query inspect only index on tables you are granted to read.
+-- WARNING: rows with is_na = 't' are known to have bad statistics ("name" type is not supported).
+-- This query is compatible with PostgreSQL 8.2 and after
+-- from ioguix
+-- just made it prettier
+CREATE OR REPLACE VIEW maintenance_schema.report_ibloat_approx_fine AS
+SELECT 
+	nspname AS schemaname, 
+	tblname, 
+	idxname, 
+	pg_size_pretty((relpages)::bigint) AS real_size,
+	pg_size_pretty((relpages-est_pages)::bigint) AS extra_size,
+    round((100 * (relpages-est_pages)::float / relpages)::numeric, 2) AS extra_ratio,
+    fillfactor, 
+	pg_size_pretty((relpages-est_pages_ff)::bigint) AS bloat_size,
+    round((100 * (relpages-est_pages_ff)::float / relpages)::numeric, 2) AS bloat_ratio,
+    is_na
+FROM (
+  SELECT coalesce(1 +
+       ceil(reltuples/floor((bs-pageopqdata-pagehdr)/(4+nulldatahdrwidth)::float)), 0 -- ItemIdData size + computed avg size of a tuple (nulldatahdrwidth)
+    ) AS est_pages,
+    coalesce(1 +
+       ceil(reltuples/floor((bs-pageopqdata-pagehdr)*fillfactor/(100*(4+nulldatahdrwidth)::float))), 0
+    ) AS est_pages_ff,
+    bs, nspname, table_oid, tblname, idxname, relpages, fillfactor, is_na
+  FROM (
+    SELECT maxalign, bs, nspname, tblname, idxname, reltuples, relpages, relam, table_oid, fillfactor,
+      ( index_tuple_hdr_bm +
+          maxalign - CASE -- Add padding to the index tuple header to align on MAXALIGN
+            WHEN index_tuple_hdr_bm%maxalign = 0 THEN maxalign
+            ELSE index_tuple_hdr_bm%maxalign
+          END
+        + nulldatawidth + maxalign - CASE -- Add padding to the data to align on MAXALIGN
+            WHEN nulldatawidth = 0 THEN 0
+            WHEN nulldatawidth::integer%maxalign = 0 THEN maxalign
+            ELSE nulldatawidth::integer%maxalign
+          END
+      )::numeric AS nulldatahdrwidth, pagehdr, pageopqdata, is_na
+      -- , index_tuple_hdr_bm, nulldatawidth -- (DEBUG INFO)
+    FROM (
+      SELECT
+        i.nspname, i.tblname, i.idxname, i.reltuples, i.relpages, i.relam, a.attrelid AS table_oid,
+        current_setting('block_size')::numeric AS bs, fillfactor,
+        CASE -- MAXALIGN: 4 on 32bits, 8 on 64bits (and mingw32 ?)
+          WHEN version() ~ 'mingw32' OR version() ~ '64-bit|x86_64|ppc64|ia64|amd64' THEN 8
+          ELSE 4
+        END AS maxalign,
+        /* per page header, fixed size: 20 for 7.X, 24 for others */
+        24 AS pagehdr,
+        /* per page btree opaque data */
+        16 AS pageopqdata,
+        /* per tuple header: add IndexAttributeBitMapData if some cols are null-able */
+        CASE WHEN max(coalesce(s.null_frac,0)) = 0
+          THEN 2 -- IndexTupleData size
+          ELSE 2 + (( 32 + 8 - 1 ) / 8) -- IndexTupleData size + IndexAttributeBitMapData size ( max num filed per index + 8 - 1 /8)
+        END AS index_tuple_hdr_bm,
+        /* data len: we remove null values save space using it fractionnal part from stats */
+        sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024)) AS nulldatawidth,
+        max( CASE WHEN a.atttypid = 'pg_catalog.name'::regtype THEN 1 ELSE 0 END ) > 0 AS is_na
+      FROM pg_attribute AS a
+        JOIN (
+          SELECT nspname, tbl.relname AS tblname, idx.relname AS idxname, idx.reltuples, idx.relpages, idx.relam,
+            indrelid, indexrelid, indkey::smallint[] AS attnum,
+            coalesce(substring(
+              array_to_string(idx.reloptions, ' ')
+               from 'fillfactor=([0-9]+)')::smallint, 90) AS fillfactor
+          FROM pg_index
+            JOIN pg_class idx ON idx.oid=pg_index.indexrelid
+            JOIN pg_class tbl ON tbl.oid=pg_index.indrelid
+            JOIN pg_namespace ON pg_namespace.oid = idx.relnamespace
+          WHERE pg_index.indisvalid AND tbl.relkind = 'r' AND idx.relpages > 0
+        ) AS i ON a.attrelid = i.indexrelid
+        JOIN pg_stats AS s ON s.schemaname = i.nspname
+          AND ((s.tablename = i.tblname AND s.attname = pg_catalog.pg_get_indexdef(a.attrelid, a.attnum, TRUE)) -- stats from tbl
+          OR   (s.tablename = i.idxname AND s.attname = a.attname))-- stats from functionnal cols
+        JOIN pg_type AS t ON a.atttypid = t.oid
+      WHERE a.attnum > 0
+      GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9
+    ) AS s1
+  ) AS s2
+    JOIN pg_am am ON s2.relam = am.oid WHERE am.amname = 'btree'
+) AS sub
+WHERE ((relpages-est_pages_ff) !=0 OR round((100 * (relpages-est_pages_ff)::float / relpages)::numeric, 2) !=0)
+AND nspname NOT IN ('pg_catalog', 'information_schema')
+ORDER BY 2,3,4;
 
 -- report or unused indexes
 CREATE OR REPLACE VIEW maintenance_schema.report_unused_idx
@@ -524,6 +678,59 @@ JOIN indexes j
 WHERE NOT i.indisprimary
 AND NOT i.indisreplident  ;
 
+-- pending wrap-around 
+-- from gsmith
+
+CREATE OR REPLACE VIEW maintenance_schema.report_approching_wraparound AS
+SELECT
+  nspname,
+  CASE WHEN relkind='t' THEN toastname ELSE relname END AS relname,
+  CASE WHEN relkind='t' THEN 'Toast' ELSE 'Table' END AS kind,
+  pg_size_pretty(pg_relation_size(oid)) as table_sz,
+  pg_size_pretty(pg_total_relation_size(oid)) as total_sz,
+  age(relfrozenxid),
+  last_vacuum
+FROM
+(SELECT
+  c.oid,
+  c.relkind,
+  N.nspname,
+  C.relname,
+  T.relname AS toastname,
+  C.relfrozenxid,
+  date_trunc('day',greatest(pg_stat_get_last_vacuum_time(C.oid),pg_stat_get_last_autovacuum_time(C.oid)))::date AS last_vacuum,
+  setting::integer as freeze_max_age
+ FROM pg_class C
+  LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+  LEFT OUTER JOIN pg_class T ON (C.oid=T.reltoastrelid),
+  pg_settings
+  WHERE C.relkind IN ('r', 't')
+-- We want toast items to appear in the wraparound list
+    AND N.nspname NOT IN ('pg_catalog', 'information_schema') AND
+    name='autovacuum_freeze_max_age'
+    AND pg_relation_size(c.oid)>0
+) AS av
+WHERE age(relfrozenxid) > (0.85 * freeze_max_age)
+ORDER BY age(relfrozenxid) DESC, pg_total_relation_size(oid) DESC
+;
+
+--autovaccum freeze_max_age
+CREATE OR REPLACE VIEW maintenance_schema.report_oldest_fxid AS
+select datname, max(age(datfrozenxid)) as oldest 
+from pg_database  
+GROUP BY datname
+ORDER BY max(age(datfrozenxid)) DESC;
+
+
+--XID of all tables >1GB 
+--ASC
+CREATE OR REPLACE VIEW maintenance_schema.report_frozenxid AS
+SELECT relname, age(relfrozenxid) as xid_age,
+    pg_size_pretty(pg_table_size(oid)) as table_size
+FROM pg_class
+WHERE relkind = 'r' and pg_table_size(oid) > 1073741824
+ORDER BY age(relfrozenxid) DESC LIMIT 20;
+
 ---------------------------
 -- STATEMENTS FOR DBA
 ---------------------------
@@ -556,29 +763,29 @@ ORDER BY last_vacuum DESC NULLS FIRST,last_analyze DESC;
 -- from check_postgres
 CREATE OR REPLACE VIEW maintenance_schema.dba_vacuum_reidx_bloat AS
 SELECT 
-	current_database, 
 	schemaname, 
 	tablename, 
 	tbloat, 
-	CASE WHEN wastedbytes/1024/1024 >100 OR tbloat >1 
+	CASE WHEN (bs*(s.relpages-otta)::BIGINT > 1000000 OR tbloat >1 )
 		THEN FORMAT('VACUUM VERBOSE %I.%I ', schemaname,tablename) 
 		ELSE 'No VACUUM to perform' 
 		END AS sql_statement_vacuum, 
 	iname, 
 	ibloat, 
-	CASE WHEN wastedibytes/1024/1024 >100 OR ibloat> 1 
+	CASE WHEN (bs*(ipages-iotta)::numeric > 1000000 OR ibloat> 1 )
 		THEN FORMAT('REINDEX INDEX %I.%I ', schemaname,iname) 
 		ELSE 'No REINDEX to perform' 
 		END AS sql_statement_reindex
-FROM (
-
+FROM 
+(
 SELECT
-  current_database(), schemaname, tablename, 
+  schemaname, tablename, /*reltuples::bigint, relpages::bigint, otta,*/
   ROUND((CASE WHEN otta=0 THEN 0.0 ELSE sml.relpages::FLOAT/otta END)::NUMERIC,1) AS tbloat,
-  CASE WHEN relpages < otta THEN 0 ELSE bs*(sml.relpages-otta)::BIGINT END AS wastedbytes,
-  iname, 
+  pg_size_pretty(CASE WHEN relpages < otta THEN 0 ELSE bs*(sml.relpages-otta)::BIGINT END) AS wastedbytes,
+  iname, /*ituples::bigint, ipages::bigint, iotta,*/
   ROUND((CASE WHEN iotta=0 OR ipages=0 THEN 0.0 ELSE ipages::FLOAT/iotta END)::NUMERIC,1) AS ibloat,
-  CASE WHEN ipages < iotta THEN 0 ELSE bs*(ipages-iotta) END AS wastedibytes
+  pg_size_pretty(CASE WHEN ipages < iotta THEN 0 ELSE bs*(ipages-iotta)::numeric END) AS wastedibytes,
+  bs, relpages, otta, ipages, iotta
 FROM (
   SELECT
     schemaname, tablename, cc.reltuples, cc.relpages, bs,
@@ -615,11 +822,10 @@ FROM (
   JOIN pg_namespace nn ON cc.relnamespace = nn.oid AND nn.nspname = rs.schemaname AND nn.nspname <> 'information_schema'
   LEFT JOIN pg_index i ON indrelid = cc.oid
   LEFT JOIN pg_class c2 ON c2.oid = i.indexrelid
-) AS sml
-ORDER BY wastedbytes DESC
-) AS t1 
+) AS sml 
+) s
 WHERE (tbloat >1.0 OR ibloat >1.0 )
-AND (wastedbytes/1024/1024> 100 OR wastedibytes/1024/1024> 100)
+AND (bs*(s.relpages-otta)::BIGINT > 1000000 OR bs*(ipages-iotta)::numeric > 1000000)
 ;
 		
 -- drop unused index statements		
