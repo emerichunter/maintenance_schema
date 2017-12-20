@@ -12,7 +12,7 @@ CREATE SCHEMA IF NOT EXISTS maintenance_schema AUTHORIZATION current_user;
 
 
 -- VIEW last analyze et vacuum avec filtres sur toutes les tables/bases du cluster
-CREATE OR REPLACE VIEW maintenance_schema.report_last_analyze_vacuum AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_last_analyze_vacuum AS
 select 
 	   c.relname,
 	   c.relowner,
@@ -38,7 +38,7 @@ order by last_vacuum desc NULLS FIRST,last_analyze desc;
 -- report bloat approx 
 -- from check_postgres
 -- prettier with lower limit
-CREATE OR REPLACE VIEW maintenance_schema.report_bloat_approx AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_bloat_approx AS
 SELECT schemaname, tablename, tbloat, wastedbytes, iname, ibloat, wastedibytes
 FROM 
 (
@@ -97,7 +97,7 @@ AND (bs*(s.relpages-otta)::BIGINT > 1000000 OR bs*(ipages-iotta)::numeric > 1000
 -- fillfactor and stats uptodate
 -- made it prettier
 -- This query is compatible with PostgreSQL 9.0 and more
-CREATE OR REPLACE VIEW maintenance_schema.report_tbloat_approx_fine AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_tbloat_approx_fine AS
 SELECT 
 	schemaname, 
 	tblname, 
@@ -165,7 +165,7 @@ AND ((tblpages-est_tblpages)*bs) > 1000000;
 -- This query is compatible with PostgreSQL 8.2 and after
 -- from ioguix
 -- just made it prettier
-CREATE OR REPLACE VIEW maintenance_schema.report_ibloat_approx_fine AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_ibloat_approx_fine AS
 SELECT 
 	nspname AS schemaname, 
 	tblname, 
@@ -247,7 +247,7 @@ AND nspname NOT IN ('pg_catalog', 'information_schema')
 ORDER BY 2,3,4;
 
 -- report or unused indexes
-CREATE OR REPLACE VIEW maintenance_schema.report_unused_idx
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_unused
 AS
 SELECT 
 	pg_sui.relname, 
@@ -269,8 +269,8 @@ ORDER BY relname
 ;
 		
 	
--- report of most full scanned tables	
-CREATE OR REPLACE VIEW maintenance_schema.report_mostfullscaned
+-- report of most full scanned tables: missing indexes
+CREATE OR REPLACE VIEW maintenance_schema.rpt_mostfullscaned
 AS
 SELECT pg_sut.relname as nom_table, seq_scan, COALESCE(seq_tup_read,0) as fullscan_tuples,
                 COALESCE(idx_scan,0) as idx_scan, COALESCE(idx_tup_fetch,0) as idxscan_tuples,
@@ -295,7 +295,7 @@ SELECT pg_sut.relname as nom_table, seq_scan, COALESCE(seq_tup_read,0) as fullsc
 		
 -- report index usage
 -- from wiki
-CREATE OR REPLACE VIEW maintenance_schema.report_index_usage
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_usage
 AS
 SELECT
     t.tablename,
@@ -324,7 +324,7 @@ ORDER BY t.tablename, indexname;
 -- report index usage by count
 -- from wiki
 -- TO DROP?
-CREATE OR REPLACE VIEW maintenance_schema.report_indexusagecounts 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_usagecounts 
 AS 
 SELECT
     schemaname::text,
@@ -344,7 +344,7 @@ ORDER BY
   
 -- report of unindex foreign keys
 -- from Josh Berkus
-CREATE OR REPLACE VIEW maintenance_schema.report_unindexed_fk AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_fk_unindexed AS
 WITH y AS (
     SELECT
         pg_catalog.format('%I.%I', n1.nspname, c1.relname)  AS referencing_tbl,
@@ -388,7 +388,7 @@ ORDER BY
     referenced_column;
 
 -- Duplicate foreign keys
-CREATE OR REPLACE VIEW maintenance_schema.report_duplicate_fk AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_fk_duplicate AS
 SELECT
     pc.conname as constraint_name, 
     pclsc.relname as child_table,
@@ -421,7 +421,7 @@ ORDER BY pclsc.relname ;
 -- report of indexes returning too many lines 
 -- run on primary and all standbys
 -- turn to partial index or drop entirely
-CREATE OR REPLACE VIEW maintenance_schema.report_idx_wtoomanylines
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_wtoomanylines
 AS
 SELECT 
 		pg_sui.relname, indexrelname, idx_scan, idx_tup_read, idx_tup_fetch, pg_c.reltuples as nb_lignes_table,
@@ -439,7 +439,7 @@ ORDER BY idx_tup_read/idx_scan*100 DESC
 	;
 
 -- report of duplicate indexes
-CREATE OR REPLACE VIEW maintenance_schema.report_duplicate_idx
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_duplicate
 AS
 SELECT c.relname, 
 		pg_size_pretty(SUM(pg_relation_size(idx))::BIGINT) AS SIZE,
@@ -460,7 +460,7 @@ ORDER BY SUM(pg_relation_size(idx)) DESC;
 
 
 --report on invalid indexes
-CREATE OR REPLACE VIEW maintenance_schema.report_invalid_idx
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_invalid
 AS
 SELECT 
 	  n.nspname as schemaname,
@@ -477,7 +477,7 @@ WHERE  (i.indisvalid = false OR i.indisready = false) ;
 
 
 -- report on locks with time
-create or replace VIEW maintenance_schema.report_lock_time AS
+create or replace VIEW maintenance_schema.rpt_lock_time AS
  SELECT a.datname,
          c.relname,
          l.transactionid,
@@ -497,7 +497,7 @@ create or replace VIEW maintenance_schema.report_lock_time AS
 
 
 -- report on locks with locking and locked transactions
-create or replace VIEW maintenance_schema.report_blockin_n_blockd_locks AS
+create or replace VIEW maintenance_schema.rpt_locks_blockin_n_blockd AS
 SELECT blocked_locks.pid     AS blocked_pid,
          blocked_activity.usename  AS blocked_user,
          blocking_locks.pid     AS blocking_pid,
@@ -525,7 +525,7 @@ SELECT blocked_locks.pid     AS blocked_pid,
    
 -- report of activity summary 
 -- from wiki
-CREATE OR REPLACE VIEW maintenance_schema.report_activity_summary AS 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_activity_summary AS 
 -- Statements distribution of tuples. So this is not transactions but number of tuples (rows)
 SELECT
  d.datname::text,
@@ -563,7 +563,7 @@ not datistemplate and d.datname != 'postgres';
 
 -- report of expected candidate for autovacuum 
 -- corrected for 9.4+
-CREATE OR REPLACE VIEW maintenance_schema.report_autovacuum_candidates
+CREATE OR REPLACE VIEW maintenance_schema.rpt_autovacuum_candidates
 AS
  SELECT psut.relname,
      to_char(psut.last_vacuum, 'YYYY-MM-DD HH24:MI') as last_vacuum,
@@ -583,17 +583,25 @@ AS
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_mod_since_analyze
          THEN '*'
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup*1.5
+		 THEN 'Consider Tuning AV !'
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
+         THEN 'Consider Tuning AV !'
          ELSE ''
      END AS expect_av
  FROM pg_stat_user_tables psut
      JOIN pg_class on psut.relid = pg_class.oid
- WHERE pg_class.reltuples > 10000
-   AND (psut.n_dead_tup >0 OR psut.n_mod_since_analyze>0)
+ WHERE pg_class.reltuples > 10000 
+   AND (psut.n_dead_tup >1000 OR psut.n_mod_since_analyze>1000)
  ORDER BY n_tup DESC, dead_tup DESC ;
  
 
 -- report on table(s) missing pk
-CREATE OR REPLACE VIEW maintenance_schema.report_missing_pk AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_pk_missing AS
 select 
  tbl.table_schema, 
  tbl.table_name
@@ -607,7 +615,7 @@ where table_type = 'BASE TABLE'
 ;
 
 -- Tables with neither pk nor any index 
-CREATE OR REPLACE VIEW maintenance_schema.report_missing_idx AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_missing AS
  SELECT relid, schemaname, relname, n_live_tup
 from pg_stat_user_tables
 where relname NOT IN (select relname from pg_stat_user_indexes )
@@ -618,7 +626,7 @@ AND schemaname NOT IN ('information_schema','pg_catalog')
 
 
 -- report unused columns 
-CREATE OR REPLACE VIEW maintenance_schema.report_unused_columns AS 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_unused AS 
 SELECT nspname, relname, attname, typname,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
@@ -639,12 +647,12 @@ ORDER BY nspname, relname, attname
 
 -- report on filling of sequences
 -- use select * from seqrep \gexec to execute !
-CREATE OR REPLACE VIEW maintenance_schema.report_seqrep AS 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_seqrep AS 
 select FORMAT('select sequence_name, last_value, increment_by, max_value,  (increment_by::float*last_value::float/max_value::float)::numeric as pct from %I', sequence_name) 
 from  information_schema.sequences  ;
 
 -- redundant indexes
-CREATE OR REPLACE VIEW maintenance_schema.report_redundant_idx
+CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_redundant
 AS
 WITH indexes AS (
   SELECT
@@ -681,7 +689,7 @@ AND NOT i.indisreplident  ;
 -- pending wrap-around 
 -- from gsmith
 
-CREATE OR REPLACE VIEW maintenance_schema.report_approching_wraparound AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_wraparound_approching AS
 SELECT
   nspname,
   CASE WHEN relkind='t' THEN toastname ELSE relname END AS relname,
@@ -715,7 +723,7 @@ ORDER BY age(relfrozenxid) DESC, pg_total_relation_size(oid) DESC
 ;
 
 --autovaccum freeze_max_age
-CREATE OR REPLACE VIEW maintenance_schema.report_oldest_fxid AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_database_oldest AS
 select datname, max(age(datfrozenxid)) as oldest 
 from pg_database  
 GROUP BY datname
@@ -724,7 +732,7 @@ ORDER BY max(age(datfrozenxid)) DESC;
 
 --XID of all tables >1GB 
 --ASC
-CREATE OR REPLACE VIEW maintenance_schema.report_frozenxid AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_table AS
 SELECT relname, age(relfrozenxid) as xid_age,
     pg_size_pretty(pg_table_size(oid)) as table_size
 FROM pg_class
@@ -736,7 +744,7 @@ ORDER BY age(relfrozenxid) DESC LIMIT 20;
 ---------------------------
 
 -- Suggestion last analyze et vacuum 
-CREATE OR REPLACE VIEW maintenance_schema.dba_suggestion_analyze_vacuum AS
+CREATE OR REPLACE VIEW maintenance_schema.dba_vacuum_analyze_suggestion AS
 select 
        sat.schemaname,
 	   c.relname,
@@ -827,9 +835,51 @@ FROM (
 WHERE (tbloat >1.0 OR ibloat >1.0 )
 AND (bs*(s.relpages-otta)::BIGINT > 1000000 OR bs*(ipages-iotta)::numeric > 1000000)
 ;
-		
+
+-- report of expected candidate for autovacuum 
+-- corrected for 9.4+
+CREATE OR REPLACE VIEW maintenance_schema.dba_tuning_autovacuum
+AS
+ SELECT psut.relname,
+     to_char(psut.last_vacuum, 'YYYY-MM-DD HH24:MI') as last_vacuum,
+     to_char(psut.last_autovacuum, 'YYYY-MM-DD HH24:MI') as last_autovacuum,
+     to_char(pg_class.reltuples, '9G999G999G999') AS n_tup,
+     to_char(psut.n_dead_tup, '9G999G999G999') AS dead_tup,
+	 to_char(psut.n_mod_since_analyze, '9G999G999G999') AS mod_slastnlz,
+     to_char(CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+         + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+            * pg_class.reltuples), '9G999G999G999') AS av_threshold,
+     CASE
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1) ; ALTER TABLE %I SET (autovacuum_analyze_scale_factor = 0.05) ;', psut.relname, psut.relname)
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1) ; ALTER TABLE %I SET (autovacuum_analyze_scale_factor = 0.05) ;', psut.relname, psut.relname)
+         ELSE 'Nothing to do'
+     END AS sql_statement_std,
+	 CASE 
+	 	 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_cost_limit = 1000); ALTER TABLE %I SET (autovacuum_vacuum_cost_delay = 10); ', psut.relname, psut.relname)
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_cost_limit = 1000); ALTER TABLE %I SET (autovacuum_vacuum_cost_delay = 10); ', psut.relname, psut.relname)
+         ELSE 'Nothing to do'
+     END AS sql_statement_ssd_or_multicores
+ FROM pg_stat_user_tables psut
+     JOIN pg_class on psut.relid = pg_class.oid
+ WHERE pg_class.reltuples > 10000 
+   AND (psut.n_dead_tup >1000 OR psut.n_mod_since_analyze>1000)
+ ORDER BY n_tup DESC, dead_tup DESC ;
+ 
+	
 -- drop unused index statements		
-CREATE OR REPLACE VIEW maintenance_schema.dba_drop_unused_idx
+CREATE OR REPLACE VIEW maintenance_schema.dba_drop_idx_unused
 AS
 
  SELECT pg_sui.relname, 
@@ -850,7 +900,7 @@ AS
 	;
 
 --single statement index suggestion
-CREATE OR REPLACE VIEW maintenance_schema.dba_idx_suggestions
+CREATE OR REPLACE VIEW maintenance_schema.dba_create_idx_suggestions
 AS	
 		SELECT pg_sut.relname as nom_table, 
 			   FORMAT('CREATE INDEX CONCURRENTLY IF NOT EXISTS %I_%I_idx ON %I.%I (%I)',pg_sut.relname,  pg_a.attname,schemaname, pg_sut.relname,  pg_a.attname) as sql_statement 
@@ -878,7 +928,7 @@ AS
 
 -- DROP duplicate indexes
 -- TO DO : filter using fk
-CREATE OR REPLACE VIEW maintenance_schema.dba_drop_duplicate_idx 
+CREATE OR REPLACE VIEW maintenance_schema.dba_drop_idx_duplicate 
 AS
 SELECT  
 		pg_size_pretty(SUM(pg_relation_size(idx))::BIGINT) AS SIZE,
@@ -916,7 +966,7 @@ GROUP BY  KEY HAVING COUNT(*)>1
 ORDER BY SUM(pg_relation_size(idx)) DESC;
 
 --ANALYZE/REINDEX of invalid/notready indexes
-CREATE OR REPLACE VIEW maintenance_schema.dba_reindex_invalid_idx 
+CREATE OR REPLACE VIEW maintenance_schema.dba_reindex_idx_invalid 
 AS
 SELECT 
 	  n.nspname as schemaname,
@@ -934,7 +984,7 @@ WHERE  (i.indisvalid = false OR i.indisready = false) ;
 
 -- create indexes for all columns on tables without any index
 -- USE CAREFULLY !
-CREATE OR REPLACE VIEW maintenance_schema.dba_create_all_missing_idx AS
+CREATE OR REPLACE VIEW maintenance_schema.dba_create_idx_all_missing AS
  SELECT relid, schemaname, pgsut.relname, n_live_tup,
  FORMAT('CREATE INDEX CONCURRENTLY IF NOT EXISTS %I_%I_idx ON %I.%I (%I)',pgsut.relname,   attname,schemaname, pgsut.relname,  attname)
 from pg_stat_user_tables pgsut
@@ -948,7 +998,7 @@ AND pgsut.n_live_tup> 500 -- minimum number of tuples to make sense
 
 
 -- drop unused columns 
-CREATE OR REPLACE VIEW maintenance_schema.dba_drop_unused_columns AS 
+CREATE OR REPLACE VIEW maintenance_schema.dba_drop_columns_unused AS 
 SELECT nspname, relname, attname, typname,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
@@ -967,7 +1017,7 @@ ORDER BY nspname, relname, attname
 ;
 
 -- Statements to unlock long running locks 
-CREATE OR REPLACE VIEW maintenance_schema.dba_lock_time AS
+CREATE OR REPLACE VIEW maintenance_schema.dba_unlock_time AS
  SELECT a.datname,
          c.relname,
          l.transactionid,
@@ -989,7 +1039,7 @@ CREATE OR REPLACE VIEW maintenance_schema.dba_lock_time AS
 
 	
 -- Statements to unlock either locking or locked transaction
-CREATE OR REPLACE VIEW maintenance_schema.dba_unlocking_locks AS
+CREATE OR REPLACE VIEW maintenance_schema.dba_unlock_deadlocks AS
 SELECT blocked_locks.pid     AS blocked_pid,
          blocked_activity.usename  AS blocked_user,
          blocking_locks.pid     AS blocking_pid,
@@ -1019,7 +1069,7 @@ SELECT blocked_locks.pid     AS blocked_pid,
    WHERE NOT blocked_locks.GRANTED;
  
 -- Statements to DROP redundant indexes
-CREATE OR REPLACE VIEW maintenance_schema.dba_drop_redundant_idx 
+CREATE OR REPLACE VIEW maintenance_schema.dba_drop_idx_redundant 
 AS 
    WITH indexes AS (
   SELECT
@@ -1064,10 +1114,10 @@ JOIN indexes j
 -- encoding
 CREATE OR REPLACE VIEW maintenance_schema.audit_encoding
 AS
- SELECT setting as client_encoding_alert
+ SELECT name, setting as client_encoding_alert
  from pg_settings
- where name = 'client_encoding'
- and setting!= 'UTF8'
+ where name ilike '%encoding'
+ and setting!= 'UTF8' 
 ;
 
 ---------------------------------
