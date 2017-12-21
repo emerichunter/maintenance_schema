@@ -2,19 +2,21 @@
 
 A DBA framework for postgres using views.
 
+# INSTALL
+
 Put both files in the extension folder.
 
-Use `CREATE EXTENSION` in the wanted database.
+Use `CREATE EXTENSION` in the wanted database(s).
 
-**WARNING**: log out and back in for the schema to be loaded in the current user path.
+## **WARNING**: log out and back in for the schema to be loaded in the current user path.
 
-**NOTE**: intended for postgres user or user with SUPER.
+## **NOTE**: intended for postgres user or user with SUPER.
 
-* `report_` views are meant as information 
+* `rpt_` views are meant as information 
 * `audit_` views serve as warnings 
 * `dba_` views contain DDL/DML statement (just \gexec it !)
 
-**TODOs** :
+# **TODOs** :
 - add `ALTER TABLE` statements for autovacuum and autoanalyze based on size
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
 - audit check : pg_hba.conf, listen_addresses, unix socket,...  security in general, (others?) -> On the way for version 0.0.2
@@ -26,7 +28,7 @@ Use `CREATE EXTENSION` in the wanted database.
 VERSION COMPATIBILITY
 =====================
 
-All view should be compatible from 9.5 and up.
-Some view might be compatible starting with 9.4.
+All views should be compatible from 9.5 and up.
+Some views might be compatible starting with 9.4.
 
 
