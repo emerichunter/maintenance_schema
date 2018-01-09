@@ -38,6 +38,7 @@ postgres@pgbench=# select sql_statement from maintenance_schema.full_report \gex
 - add extensions pgstattuple, others ?
 - Version compatibility handling for 9.3 and 9.4 (and 10 for replication)
 - Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
+- Need name of view for each table from full report
 
 VERSION COMPATIBILITY
 =====================
