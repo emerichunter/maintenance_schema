@@ -1,4 +1,4 @@
 # maintenance_schema extension
 comment = 'maintenance_schema pro activ views to administer your database (for DBA)'
-default_version = '0.0.2'
+default_version = '0.0.3'
 relocatable = true
