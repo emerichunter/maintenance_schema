@@ -23,7 +23,8 @@ Use `CREATE EXTENSION` in the wanted database(s).
 - encoding : to perfect (add server side...)
 - perfect row filtering on expect_av, foreign_fk (others?),
 - add extensions pgstattuple, others ?
-- Version compatibility handling for 9.3 and 9.4
+- Version compatibility handling for 9.3 and 9.4 (and 10 for replication)
+- Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
 
 VERSION COMPATIBILITY
 =====================
