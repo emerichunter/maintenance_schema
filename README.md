@@ -16,6 +16,19 @@ Use `CREATE EXTENSION` in the wanted database(s).
 * `audit_` views serve as warnings 
 * `dba_` views contain DDL/DML statement (just \gexec it !)
 
+## USAGE of full_report 
+NOTE : use in shell to have a "nice" html report
+`psql -d pgbench -c "select concat(sql_statement , ';') from maintenance_schema.full_report  " | psql -d pgbench -H  -o fullrpt.html`
+
+or
+
+~~~
+postgres@pgbench=# \H
+Output format is html.
+postgres@pgbench=# \o fullrpt.html
+postgres@pgbench=# select sql_statement from maintenance_schema.full_report \gexec
+~~~
+
 # **TODOs** :
 - add `ALTER TABLE` statements for autovacuum and autoanalyze based on size
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
