@@ -1193,6 +1193,21 @@ select relname, reloptions
 from pg_class 
 where reloptions is not null ;
 
+---------------------------------------
+-- FULL REPORT 
+---------------------------------------
+-- Create full report in and out the cluster
+CREATE OR REPLACE VIEW maintenance_schema.full_report AS
+SELECT 
+		FORMAT('SELECT * FROM %I.%I  ', schemaname, viewname ) AS SQL_statement
+FROM (SELECT 
+			schemaname,
+			viewname 
+		FROM pg_views 
+		WHERE schemaname='maintenance_schema' 
+		AND viewname NOT LIKE 'dba%'
+		AND viewname NOT LIKE 'full%' )AS viewlist
+ORDER BY sql_statement;
 
 
 GRANT USAGE ON SCHEMA maintenance_schema TO current_user ;

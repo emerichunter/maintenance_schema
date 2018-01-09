@@ -1,0 +1,1065 @@
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">reloptions</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_tellers</td>
+    <td align="left">{fillfactor=100}</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_branches</td>
+    <td align="left">{fillfactor=100}</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_accounts</td>
+    <td align="left">{fillfactor=100,autovacuum_vacuum_scale_factor=0.1,autovacuum_analyze_scale_factor=0.05}</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pg_stats</td>
+    <td align="left">{security_barrier=true}</td>
+  </tr>
+</table>
+<p>(4 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">name</th>
+    <th align="center">setting</th>
+    <th align="center">boot_val</th>
+    <th align="center">reset_val</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">application_name</td>
+    <td align="left">psql</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">psql</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">archive_command</td>
+    <td align="left">pgbackrest --stanza=test-9.6 archive-push %p</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">pgbackrest --stanza=test-9.6 archive-push %p</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">archive_mode</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">archive_timeout</td>
+    <td align="left">120</td>
+    <td align="left">0</td>
+    <td align="left">120</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">checkpoint_completion_target</td>
+    <td align="left">0.9</td>
+    <td align="left">0.5</td>
+    <td align="left">0.9</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">client_encoding</td>
+    <td align="left">UTF8</td>
+    <td align="left">SQL_ASCII</td>
+    <td align="left">UTF8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">cluster_name</td>
+    <td align="left">test</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">test</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">data_checksums</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">effective_cache_size</td>
+    <td align="left">786432</td>
+    <td align="left">524288</td>
+    <td align="left">786432</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">hot_standby</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">listen_addresses</td>
+    <td align="left">localhost,*</td>
+    <td align="left">localhost</td>
+    <td align="left">localhost,*</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_checkpoints</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_connections</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_directory</td>
+    <td align="left">/var/postgres/test/9.6/pg_log</td>
+    <td align="left">pg_log</td>
+    <td align="left">/var/postgres/test/9.6/pg_log</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_disconnections</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_file_mode</td>
+    <td align="left">0600</td>
+    <td align="left">384</td>
+    <td align="left">384</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_filename</td>
+    <td align="left">postgresql.log</td>
+    <td align="left">postgresql-%Y-%m-%d_%H%M%S.log</td>
+    <td align="left">postgresql.log</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_line_prefix</td>
+    <td align="left">%t [%p]: [%l-1] [%x] user=%u,db=%d </td>
+    <td align="left">&nbsp; </td>
+    <td align="left">%t [%p]: [%l-1] [%x] user=%u,db=%d </td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_lock_waits</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_min_duration_statement</td>
+    <td align="left">100</td>
+    <td align="left">-1</td>
+    <td align="left">100</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_temp_files</td>
+    <td align="left">0</td>
+    <td align="left">-1</td>
+    <td align="left">0</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">log_timezone</td>
+    <td align="left">Europe/Paris</td>
+    <td align="left">GMT</td>
+    <td align="left">Europe/Paris</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">logging_collector</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">maintenance_work_mem</td>
+    <td align="left">131072</td>
+    <td align="left">65536</td>
+    <td align="left">131072</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_connections</td>
+    <td align="left">101</td>
+    <td align="left">100</td>
+    <td align="left">101</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_parallel_workers_per_gather</td>
+    <td align="left">2</td>
+    <td align="left">0</td>
+    <td align="left">2</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_replication_slots</td>
+    <td align="left">5</td>
+    <td align="left">0</td>
+    <td align="left">5</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_stack_depth</td>
+    <td align="left">8192</td>
+    <td align="left">100</td>
+    <td align="left">8192</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">max_wal_senders</td>
+    <td align="left">10</td>
+    <td align="left">0</td>
+    <td align="left">10</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">search_path</td>
+    <td align="left">&quot;$user&quot;, public, maintenance_schema</td>
+    <td align="left">&quot;$user&quot;, public</td>
+    <td align="left">&quot;$user&quot;, public, maintenance_schema</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">server_encoding</td>
+    <td align="left">UTF8</td>
+    <td align="left">SQL_ASCII</td>
+    <td align="left">UTF8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">shared_buffers</td>
+    <td align="left">262144</td>
+    <td align="left">1024</td>
+    <td align="left">262144</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">shared_preload_libraries</td>
+    <td align="left">passwordcheck</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">passwordcheck</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">ssl</td>
+    <td align="left">on</td>
+    <td align="left">off</td>
+    <td align="left">on</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">temp_buffers</td>
+    <td align="left">6400</td>
+    <td align="left">1024</td>
+    <td align="left">6400</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">TimeZone</td>
+    <td align="left">Europe/Paris</td>
+    <td align="left">GMT</td>
+    <td align="left">Europe/Paris</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">track_activity_query_size</td>
+    <td align="left">16384</td>
+    <td align="left">1024</td>
+    <td align="left">16384</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">transaction_isolation</td>
+    <td align="left">read committed</td>
+    <td align="left">default</td>
+    <td align="left">default</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">unix_socket_directories</td>
+    <td align="left">/var/run/postgresql, /var/postgres/test/9.6/run, /tmp</td>
+    <td align="left">/var/run/postgresql, /tmp</td>
+    <td align="left">/var/run/postgresql, /var/postgres/test/9.6/run, /tmp</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">unix_socket_group</td>
+    <td align="left">postgres</td>
+    <td align="left">&nbsp; </td>
+    <td align="left">postgres</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">unix_socket_permissions</td>
+    <td align="left">0770</td>
+    <td align="left">511</td>
+    <td align="left">504</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">wal_buffers</td>
+    <td align="left">960</td>
+    <td align="left">-1</td>
+    <td align="left">960</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">wal_keep_segments</td>
+    <td align="left">8</td>
+    <td align="left">0</td>
+    <td align="left">8</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">wal_level</td>
+    <td align="left">replica</td>
+    <td align="left">minimal</td>
+    <td align="left">replica</td>
+  </tr>
+</table>
+<p>(44 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">datname</th>
+    <th align="center">selected</th>
+    <th align="center">inserted</th>
+    <th align="center">updated</th>
+    <th align="center">deleted</th>
+    <th align="center">total_transactions</th>
+    <th align="center">select_pct</th>
+    <th align="center">insert_pct</th>
+    <th align="center">update_pct</th>
+    <th align="center">delete_pct</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">results</td>
+    <td align="right">1018908588</td>
+    <td align="right">118392321</td>
+    <td align="right">3137</td>
+    <td align="right">228</td>
+    <td align="right">1137304274</td>
+    <td align="right">89.5898</td>
+    <td align="right">10.4099</td>
+    <td align="right">0.0003</td>
+    <td align="right">0.0000</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench</td>
+    <td align="right">2748640649</td>
+    <td align="right">1131612669</td>
+    <td align="right">294550664</td>
+    <td align="right">38856</td>
+    <td align="right">4174842838</td>
+    <td align="right">65.8382</td>
+    <td align="right">27.1055</td>
+    <td align="right">7.0554</td>
+    <td align="right">0.0009</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">dbtest</td>
+    <td align="right">88755736</td>
+    <td align="right">6309</td>
+    <td align="right">560</td>
+    <td align="right">2642</td>
+    <td align="right">88765247</td>
+    <td align="right">99.9893</td>
+    <td align="right">0.0071</td>
+    <td align="right">0.0006</td>
+    <td align="right">0.0030</td>
+  </tr>
+</table>
+<p>(3 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">nbreadyfiles</th>
+    <th align="center">alert_level</th>
+  </tr>
+  <tr valign="top">
+    <td align="right">0</td>
+    <td align="left">NORMAL</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">last_vacuum</th>
+    <th align="center">last_autovacuum</th>
+    <th align="center">n_tup</th>
+    <th align="center">dead_tup</th>
+    <th align="center">mod_slastnlz</th>
+    <th align="center">av_threshold</th>
+    <th align="center">expect_av</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">schemaname</th>
+    <th align="center">tablename</th>
+    <th align="center">tbloat</th>
+    <th align="center">wastedbytes</th>
+    <th align="center">iname</th>
+    <th align="center">ibloat</th>
+    <th align="center">wastedibytes</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_accounts</td>
+    <td align="right">3.4</td>
+    <td align="left">9055 MB</td>
+    <td align="left">pgbench_accounts_pkey</td>
+    <td align="right">0.9</td>
+    <td align="left">0 bytes</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">nspname</th>
+    <th align="center">relname</th>
+    <th align="center">attname</th>
+    <th align="center">typname</th>
+    <th align="center">null_percent</th>
+    <th align="center">distinct</th>
+    <th align="center">values</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">constraint_name</th>
+    <th align="center">child_table</th>
+    <th align="center">child_column</th>
+    <th align="center">parent_table</th>
+    <th align="center">parent_column</th>
+    <th align="center">schema_name</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">referencing_tbl</th>
+    <th align="center">referencing_column</th>
+    <th align="center">existing_fk_on_referencing_tbl</th>
+    <th align="center">referenced_tbl</th>
+    <th align="center">referenced_column</th>
+    <th align="center">referencing_tbl_size</th>
+    <th align="center">referenced_tbl_size</th>
+    <th align="center">suggestion</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">datname</th>
+    <th align="center">oldest</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">results</td>
+    <td align="right">196686049</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">postgres</td>
+    <td align="right">183582375</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">dbtest</td>
+    <td align="right">154471676</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">template1</td>
+    <td align="right">106674467</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench</td>
+    <td align="right">55217369</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">template0</td>
+    <td align="right">4467945</td>
+  </tr>
+</table>
+<p>(6 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">xid_age</th>
+    <th align="center">table_size</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_accounts</td>
+    <td align="right">5217404</td>
+    <td align="left">13 GB</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">nspname</th>
+    <th align="center">relname</th>
+    <th align="center">kind</th>
+    <th align="center">table_sz</th>
+    <th align="center">total_sz</th>
+    <th align="center">age</th>
+    <th align="center">last_vacuum</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">schemaname</th>
+    <th align="center">tblname</th>
+    <th align="center">idxname</th>
+    <th align="center">real_size</th>
+    <th align="center">extra_size</th>
+    <th align="center">extra_ratio</th>
+    <th align="center">fillfactor</th>
+    <th align="center">bloat_size</th>
+    <th align="center">bloat_ratio</th>
+    <th align="center">is_na</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_accounts</td>
+    <td align="left">pgbench_accounts_pkey</td>
+    <td align="left">268 kB</td>
+    <td align="left">28 kB</td>
+    <td align="right">10.39</td>
+    <td align="right">90</td>
+    <td align="left">968 bytes</td>
+    <td align="right">0.35</td>
+    <td align="left">f</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_branches</td>
+    <td align="left">pgbench_branches_bbalance_idx</td>
+    <td align="left">5 bytes</td>
+    <td align="left">1 bytes</td>
+    <td align="right">20.00</td>
+    <td align="right">90</td>
+    <td align="left">1 bytes</td>
+    <td align="right">20.00</td>
+    <td align="left">f</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_branches</td>
+    <td align="left">pgbench_branches_pkey</td>
+    <td align="left">7 bytes</td>
+    <td align="left">3 bytes</td>
+    <td align="right">42.86</td>
+    <td align="right">90</td>
+    <td align="left">3 bytes</td>
+    <td align="right">42.86</td>
+    <td align="left">f</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_tellers</td>
+    <td align="left">pgbench_tellers_pkey</td>
+    <td align="left">56 bytes</td>
+    <td align="left">30 bytes</td>
+    <td align="right">53.57</td>
+    <td align="right">90</td>
+    <td align="left">27 bytes</td>
+    <td align="right">48.21</td>
+    <td align="left">f</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_tellers</td>
+    <td align="left">pgbench_tellers_tid_bid_idx</td>
+    <td align="left">30 bytes</td>
+    <td align="left">4 bytes</td>
+    <td align="right">13.33</td>
+    <td align="right">90</td>
+    <td align="left">1 bytes</td>
+    <td align="right">3.33</td>
+    <td align="left">f</td>
+  </tr>
+</table>
+<p>(5 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">size</th>
+    <th align="center">idx1</th>
+    <th align="center">idx2</th>
+    <th align="center">idx3</th>
+    <th align="center">idx4</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">grapher_cpu</td>
+    <td align="left">16 kB</td>
+    <td align="left">idx_hostname</td>
+    <td align="left">idx_hostname2</td>
+    <td align="left">[null]</td>
+    <td align="left">[null]</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">schemaname</th>
+    <th align="center">tablename</th>
+    <th align="center">idxname</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relid</th>
+    <th align="center">schemaname</th>
+    <th align="center">relname</th>
+    <th align="center">n_live_tup</th>
+  </tr>
+  <tr valign="top">
+    <td align="right">323295</td>
+    <td align="left">public</td>
+    <td align="left">pgbench_history</td>
+    <td align="right">0</td>
+  </tr>
+  <tr valign="top">
+    <td align="right">183228</td>
+    <td align="left">public</td>
+    <td align="left">pg_stat_bgwriter_snapshot</td>
+    <td align="right">1</td>
+  </tr>
+</table>
+<p>(2 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">table_name</th>
+    <th align="center">Deletion candidate index</th>
+    <th align="center">Deletion candidate columns</th>
+    <th align="center">Existing index: KEEP IT!</th>
+    <th align="center">Existing columns</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">indexrelname</th>
+    <th align="center">reltuples</th>
+    <th align="center">idx_scan_count</th>
+    <th align="center">tot_idx_scan_table</th>
+    <th align="center">seq_scan</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_branches</td>
+    <td align="left">pgbench_branches_bbalance_idx</td>
+    <td align="right">1000</td>
+    <td align="right">0</td>
+    <td align="right">5211161</td>
+    <td align="right">41</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_tellers</td>
+    <td align="left">pgbench_tellers_tid_bid_idx</td>
+    <td align="right">9740</td>
+    <td align="right">0</td>
+    <td align="right">5211161</td>
+    <td align="right">6</td>
+  </tr>
+</table>
+<p>(2 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">tablename</th>
+    <th align="center">indexname</th>
+    <th align="center">num_rows</th>
+    <th align="center">table_size</th>
+    <th align="center">index_size</th>
+    <th align="center">unique</th>
+    <th align="center">number_of_scans</th>
+    <th align="center">tuples_read</th>
+    <th align="center">tuples_fetched</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">grapher_cpu</td>
+    <td align="left">idx_hostname</td>
+    <td align="right">0</td>
+    <td align="left">0 bytes</td>
+    <td align="left">8192 bytes</td>
+    <td align="left">N</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">grapher_cpu</td>
+    <td align="left">idx_hostname2</td>
+    <td align="right">0</td>
+    <td align="left">0 bytes</td>
+    <td align="left">8192 bytes</td>
+    <td align="left">N</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pg_stat_bgwriter_snapshot</td>
+    <td align="left">[null]</td>
+    <td align="right">1</td>
+    <td align="left">8192 bytes</td>
+    <td align="left">[null]</td>
+    <td align="left">N</td>
+    <td align="right">[null]</td>
+    <td align="right">[null]</td>
+    <td align="right">[null]</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_accounts</td>
+    <td align="left">pgbench_accounts_pkey</td>
+    <td align="right">1e+08</td>
+    <td align="left">13 GB</td>
+    <td align="left">2142 MB</td>
+    <td align="left">Y</td>
+    <td align="right">10822482</td>
+    <td align="right">15026573</td>
+    <td align="right">10822482</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_branches</td>
+    <td align="left">pgbench_branches_bbalance_idx</td>
+    <td align="right">1000</td>
+    <td align="left">128 kB</td>
+    <td align="left">40 kB</td>
+    <td align="left">N</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_branches</td>
+    <td align="left">pgbench_branches_pkey</td>
+    <td align="right">1000</td>
+    <td align="left">128 kB</td>
+    <td align="left">56 kB</td>
+    <td align="left">Y</td>
+    <td align="right">5211161</td>
+    <td align="right">5212387</td>
+    <td align="right">5211161</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_history</td>
+    <td align="left">[null]</td>
+    <td align="right">0</td>
+    <td align="left">0 bytes</td>
+    <td align="left">[null]</td>
+    <td align="left">N</td>
+    <td align="right">[null]</td>
+    <td align="right">[null]</td>
+    <td align="right">[null]</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_tellers</td>
+    <td align="left">pgbench_tellers_pkey</td>
+    <td align="right">9740</td>
+    <td align="left">1072 kB</td>
+    <td align="left">448 kB</td>
+    <td align="left">Y</td>
+    <td align="right">5211161</td>
+    <td align="right">5215801</td>
+    <td align="right">5211161</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_tellers</td>
+    <td align="left">pgbench_tellers_tid_bid_idx</td>
+    <td align="right">9740</td>
+    <td align="left">1072 kB</td>
+    <td align="left">240 kB</td>
+    <td align="left">N</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">sharedbuffers_usage</td>
+    <td align="left">sharedbuffers_usage_pkey</td>
+    <td align="right">0</td>
+    <td align="left">0 bytes</td>
+    <td align="left">8192 bytes</td>
+    <td align="left">Y</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+    <td align="right">0</td>
+  </tr>
+</table>
+<p>(10 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">schemaname</th>
+    <th align="center">relname</th>
+    <th align="center">indexrelname</th>
+    <th align="center">idx_scan</th>
+    <th align="center">index_size</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_tellers</td>
+    <td align="left">pgbench_tellers_tid_bid_idx</td>
+    <td align="right">0</td>
+    <td align="left">240 kB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_branches</td>
+    <td align="left">pgbench_branches_bbalance_idx</td>
+    <td align="right">0</td>
+    <td align="left">40 kB</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">grapher_cpu</td>
+    <td align="left">idx_hostname</td>
+    <td align="right">0</td>
+    <td align="left">8192 bytes</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">grapher_cpu</td>
+    <td align="left">idx_hostname2</td>
+    <td align="right">0</td>
+    <td align="left">8192 bytes</td>
+  </tr>
+</table>
+<p>(4 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">indexrelname</th>
+    <th align="center">idx_scan</th>
+    <th align="center">idx_tup_read</th>
+    <th align="center">idx_tup_fetch</th>
+    <th align="center">nb_lignes_table</th>
+    <th align="center">tx_efficacite</th>
+    <th align="center">tx_scan_read</th>
+    <th align="center">tx_scan_fetch</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">relname</th>
+    <th align="center">relowner</th>
+    <th align="center">relpages</th>
+    <th align="center">reltuples</th>
+    <th align="center">relallvisible</th>
+    <th align="center">relkind</th>
+    <th align="center">relfrozenxid</th>
+    <th align="center">schemaname</th>
+    <th align="center">last_vacuum</th>
+    <th align="center">last_autovacuum</th>
+    <th align="center">last_analyze</th>
+    <th align="center">last_autoanalyze</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_tellers</td>
+    <td align="right">10</td>
+    <td align="right">134</td>
+    <td align="right">9740</td>
+    <td align="right">134</td>
+    <td align="left">r</td>
+    <td align="right">599302723</td>
+    <td align="left">public</td>
+    <td align="left">2017-12-19 14:14:26.545798+01</td>
+    <td align="left">2017-11-22 19:52:44.610659+01</td>
+    <td align="left">2017-12-06 15:10:02.253301+01</td>
+    <td align="left">2017-11-22 19:53:44.472278+01</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_branches</td>
+    <td align="right">10</td>
+    <td align="right">16</td>
+    <td align="right">1000</td>
+    <td align="right">16</td>
+    <td align="left">r</td>
+    <td align="right">599302725</td>
+    <td align="left">public</td>
+    <td align="left">2017-12-19 14:14:26.544345+01</td>
+    <td align="left">2017-11-22 19:52:44.711264+01</td>
+    <td align="left">2017-12-06 15:10:02.2575+01</td>
+    <td align="left">2017-11-22 19:53:44.777233+01</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_accounts</td>
+    <td align="right">10</td>
+    <td align="right">1648511</td>
+    <td align="right">1e+08</td>
+    <td align="right">1648511</td>
+    <td align="left">r</td>
+    <td align="right">599302727</td>
+    <td align="left">public</td>
+    <td align="left">2017-12-19 11:13:08.551497+01</td>
+    <td align="left">[null]</td>
+    <td align="left">2017-12-06 15:13:46.435742+01</td>
+    <td align="left">[null]</td>
+  </tr>
+</table>
+<p>(3 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">datname</th>
+    <th align="center">relname</th>
+    <th align="center">transactionid</th>
+    <th align="center">mode</th>
+    <th align="center">granted</th>
+    <th align="center">usename</th>
+    <th align="center">query</th>
+    <th align="center">query_start</th>
+    <th align="center">age</th>
+    <th align="center">pid</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">blocked_pid</th>
+    <th align="center">blocked_user</th>
+    <th align="center">blocking_pid</th>
+    <th align="center">blocking_user</th>
+    <th align="center">blocked_statement</th>
+    <th align="center">current_statement_in_blocking_process</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">datid</th>
+    <th align="center">pid</th>
+    <th align="center">datname</th>
+    <th align="center">usename</th>
+    <th align="center">application_name</th>
+    <th align="center">client_addr</th>
+    <th align="center">duration</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">nom_table</th>
+    <th align="center">seq_scan</th>
+    <th align="center">fullscan_tuples</th>
+    <th align="center">idx_scan</th>
+    <th align="center">idxscan_tuples</th>
+    <th align="center">ratio_scan</th>
+    <th align="center">ratio_tup</th>
+    <th align="center">ratio_tot_seq</th>
+    <th align="center">ratio_tot_idx</th>
+    <th align="center">est_tuple</th>
+    <th align="center">last_analyze</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_branches</td>
+    <td align="right">41</td>
+    <td align="right">41000</td>
+    <td align="right">5211161</td>
+    <td align="right">5211161</td>
+    <td align="right">0.00</td>
+    <td align="right">0.01</td>
+    <td align="right">41</td>
+    <td align="right">5211.161</td>
+    <td align="right">1000</td>
+    <td align="left">2017-12-06 15:10:02.2575+01</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_tellers</td>
+    <td align="right">6</td>
+    <td align="right">60000</td>
+    <td align="right">5211161</td>
+    <td align="right">5211161</td>
+    <td align="right">0.00</td>
+    <td align="right">0.01</td>
+    <td align="right">6.16016427104723</td>
+    <td align="right">535.026796714579</td>
+    <td align="right">9740</td>
+    <td align="left">2017-12-06 15:10:02.253301+01</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">pgbench_accounts</td>
+    <td align="right">5</td>
+    <td align="right">500000000</td>
+    <td align="right">10822482</td>
+    <td align="right">10822482</td>
+    <td align="right">0.00</td>
+    <td align="right">46.20</td>
+    <td align="right">5.00000240000115</td>
+    <td align="right">0.108224871947939</td>
+    <td align="right">1e+08</td>
+    <td align="left">2017-12-06 15:13:46.435742+01</td>
+  </tr>
+</table>
+<p>(3 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">table_schema</th>
+    <th align="center">table_name</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pg_stat_bgwriter_snapshot</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_history</td>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">grapher_cpu</td>
+  </tr>
+</table>
+<p>(3 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">isinrecovery</th>
+    <th align="center">last_xloglocation</th>
+    <th align="center">last_xact_ts</th>
+    <th align="center">lag_in_bytes</th>
+    <th align="center">log_delay</th>
+  </tr>
+</table>
+<p>(0 rows)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">format</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">select sequence_name, last_value, increment_by, max_value,  (increment_by::float*last_value::float/max_value::float)::numeric as pct from sharedbuffers_usage_pk_seq</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
+<table border="1">
+  <tr>
+    <th align="center">schemaname</th>
+    <th align="center">tblname</th>
+    <th align="center">real_size</th>
+    <th align="center">extra_size</th>
+    <th align="center">extra_ratio</th>
+    <th align="center">fillfactor</th>
+    <th align="center">bloat_size</th>
+    <th align="center">bloat_ratio</th>
+    <th align="center">is_na</th>
+  </tr>
+  <tr valign="top">
+    <td align="left">public</td>
+    <td align="left">pgbench_accounts</td>
+    <td align="left">13 GB</td>
+    <td align="left">8670 MB</td>
+    <td align="right">67.32</td>
+    <td align="right">100</td>
+    <td align="left">8670 MB</td>
+    <td align="right">67.32</td>
+    <td align="left">f</td>
+  </tr>
+</table>
+<p>(1 row)<br />
+</p>
