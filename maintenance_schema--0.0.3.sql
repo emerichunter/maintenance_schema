@@ -760,11 +760,11 @@ ORDER BY age(relfrozenxid) DESC LIMIT 20;
 CREATE OR REPLACE VIEW maintenance_schema.rpt_replication AS 
 SELECT 
 		pg_is_in_recovery() as isinrecovery,
-		pg_last_wal_replay_location() as last_wallocation, 
+		pg_last_wal_replay_lsn() as last_wallocation, 
 		pg_last_xact_replay_timestamp() as last_xact_ts,
-		pg_wal_location_diff(pg_stat_replication.sent_location, pg_stat_replication.replay_location) as lag_in_bytes,
+		pg_wal_lsn_diff(pg_stat_replication.sent_lsn, pg_stat_replication.replay_lsn) as lag_in_bytes,
 		CASE 
-			WHEN pg_last_wal_receive_location() = pg_last_wal_replay_location()
+			WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn()
             THEN 0
             ELSE EXTRACT (EPOCH FROM now() - pg_last_xact_replay_timestamp())
         END AS log_delay
