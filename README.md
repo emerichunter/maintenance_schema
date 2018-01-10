@@ -28,11 +28,13 @@ NOTE : use in shell to have a "nice" html report
 or
 
 ~~~
-postgres@pgbench=# \H
-Output format is html.
-postgres@pgbench=# \o fullrpt.html
-postgres@pgbench=# select sql_statement from maintenance_schema.full_report \gexec
+\H
+\C 'FULL REPORT'
+\o fullrpt.html
+ select sql_statement from maintenance_schema.full_report \gexec
 ~~~
+
+
 
 # **TODOs** :
 - add `ALTER TABLE` statements for autovacuum and autoanalyze based on size
