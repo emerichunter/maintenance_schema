@@ -1,6 +1,7 @@
 # maintenance_schema
 
-A DBA framework for postgres using views.
+A DBA framework for postgres using views. Default is version 0.0.3 intended for PG10. Version 0.0.2 for version 9.3 to 9.6.
+To change version of installation, modify the default version in maintenance_schema.control before install.
 
 # INSTALL
 
