@@ -39,11 +39,11 @@ or
 # **TODOs** :
 - add `ALTER TABLE` statements for autovacuum and autoanalyze based on size
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
-- audit check : pg_hba.conf, listen_addresses, unix socket,...  security in general, (others?) -> On the way for version 0.0.2
+- audit check : pg_hba.conf, listen_addresses, unix socket,...  security in general, (others?) -> On the way for version 0.0.4
 - encoding : to perfect (add server side...)
 - perfect row filtering on expect_av, foreign_fk (others?),
 - add extensions pgstattuple, others ?
-- Version compatibility handling for 9.3 and 9.4 (and 10 for replication)
+- Version compatibility handling for 9.3 and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
 
