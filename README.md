@@ -9,7 +9,7 @@ NOTE: To change version of installation, modify the default version in `maintena
 
 # INSTALL
 
-Put both files in the extension folder.
+Put `.sql` and `.control` files in the extension folder.
 
 Use `CREATE EXTENSION` in the wanted database(s).
 
@@ -50,5 +50,7 @@ VERSION COMPATIBILITY
 
 All views should be compatible from 9.5 and up.
 Some views might be compatible starting with 9.4.
+I will try to maintain all current supported versions.
+
 
 
