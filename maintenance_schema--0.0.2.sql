@@ -522,6 +522,20 @@ SELECT blocked_locks.pid     AS blocked_pid,
     JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
    WHERE NOT blocked_locks.GRANTED;
 
+-- report of long queries >100s
+CREATE OR REPLACE VIEW maintenance_schema.rpt_long_queries AS 
+ SELECT 
+		datid, 
+		pid, 
+		datname, 
+		usename, 
+		application_name, 
+		client_addr, 
+		query_start - now() as duration_query,
+		xact_start - now() as duration_xact
+ FROM pg_stat_activity 
+ WHERE EXTRACT (seconds FROM  query_start - now()) > 100
+ AND EXTRACT (seconds FROM  xact_start - now()) > 100; 
    
 -- report of activity summary 
 -- from wiki
@@ -739,6 +753,36 @@ FROM pg_class
 WHERE relkind = 'r' and pg_table_size(oid) > 1073741824
 ORDER BY age(relfrozenxid) DESC LIMIT 20;
 
+
+-- REPLICATION 
+-- up to 9.6 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_replication AS 
+SELECT 
+		pg_is_in_recovery() as isinrecovery,
+		pg_last_xlog_replay_location() as last_xloglocation, 
+		pg_last_xact_replay_timestamp() as last_xact_ts,
+		pg_xlog_location_diff(pg_stat_replication.sent_location, pg_stat_replication.replay_location) as lag_in_bytes,
+		CASE 
+			WHEN pg_last_xlog_receive_location() = pg_last_xlog_replay_location()
+            THEN 0
+            ELSE EXTRACT (EPOCH FROM now() - pg_last_xact_replay_timestamp())
+        END AS log_delay
+FROM pg_stat_replication		;
+
+-- ARCHIVING .ready files ALERT
+CREATE OR REPLACE VIEW maintenance_schema.rpt_archive_ready AS 
+SELECT 
+		count(*) as nbreadyfiles, 
+		CASE 
+		  WHEN count(*) >150 THEN 'DANGER!'
+		  WHEN count(*) >50 THEN 'WARNING'
+		  ELSE 'NORMAL'  
+		END AS alert_level
+FROM (
+	SELECT pg_ls_dir('pg_xlog/archive_status') AS files ) AS archstat_files
+WHERE files like '%ready' ;
+
+
 ---------------------------
 -- STATEMENTS FOR DBA
 ---------------------------
@@ -853,22 +897,22 @@ AS
 		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_dead_tup*1.5
-		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1) ; ALTER TABLE %I SET (autovacuum_analyze_scale_factor = 0.05) ;', psut.relname, psut.relname)
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1,autovacuum_analyze_scale_factor = 0.05 ) ;', psut.relname)
 		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
-		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1) ; ALTER TABLE %I SET (autovacuum_analyze_scale_factor = 0.05) ;', psut.relname, psut.relname)
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1,autovacuum_analyze_scale_factor = 0.05 ) ;',psut.relname)
          ELSE 'Nothing to do'
      END AS sql_statement_std,
 	 CASE 
 	 	 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_dead_tup*1.5
-		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_cost_limit = 1000); ALTER TABLE %I SET (autovacuum_vacuum_cost_delay = 10); ', psut.relname, psut.relname)
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_cost_limit = 1000, autovacuum_vacuum_cost_delay = 10); ',  psut.relname)
 		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
-		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_cost_limit = 1000); ALTER TABLE %I SET (autovacuum_vacuum_cost_delay = 10); ', psut.relname, psut.relname)
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_cost_limit = 1000,autovacuum_vacuum_cost_delay = 10); ',  psut.relname)
          ELSE 'Nothing to do'
      END AS sql_statement_ssd_or_multicores
  FROM pg_stat_user_tables psut
@@ -1067,7 +1111,26 @@ SELECT blocked_locks.pid     AS blocked_pid,
  
     JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
    WHERE NOT blocked_locks.GRANTED;
+
+-- CANCEL/TERMINATE long queries >100s
+-- TODO : lock handling only on SELECTs and state only idle_in_transaction
+CREATE OR REPLACE VIEW maintenance_schema.dba_stop_lqueries AS 
+ SELECT 
+		datid, 
+		pid, 
+		datname, 
+		usename, 
+		application_name, 
+		client_addr, 
+		query_start - now() as duration_query,
+		xact_start - now() as duration_xact, 
+		format('select pg_cancel_backend(%I) ;', pid) as cancel_statement, 
+		format('select pg_terminate_backend(%I) ;', pid) as terminate_statement
+ FROM pg_stat_activity 
+ WHERE EXTRACT (seconds FROM  query_start - now()) > 100
+ AND EXTRACT (seconds FROM  xact_start - now()) > 100; 
  
+   
 -- Statements to DROP redundant indexes
 CREATE OR REPLACE VIEW maintenance_schema.dba_drop_idx_redundant 
 AS 
@@ -1121,7 +1184,7 @@ AS
 ;
 
 ---------------------------------
---SETTINGS
+--SETTINGS: WHAT STICKS OUT
 ---------------------------------
 
 CREATE OR REPLACE VIEW maintenance_schema.audit_settings 
@@ -1130,6 +1193,28 @@ select name, setting, boot_val,reset_val
 from pg_settings 
 where boot_val !=reset_val or boot_val!=setting;
 
+CREATE OR REPLACE VIEW maintenance_schema.audit_options
+AS
+select relname, reloptions 
+from pg_class 
+where reloptions is not null ;
+
+
+---------------------------------------
+-- FULL REPORT 
+---------------------------------------
+-- Create full report in and out the cluster
+CREATE OR REPLACE VIEW maintenance_schema.full_report AS
+SELECT 
+		FORMAT('SELECT * FROM %I.%I  ', schemaname, viewname ) AS SQL_statement
+FROM (SELECT 
+			schemaname,
+			viewname 
+		FROM pg_views 
+		WHERE schemaname='maintenance_schema' 
+		AND viewname NOT LIKE 'dba%'
+		AND viewname NOT LIKE 'full%' )AS viewlist
+ORDER BY sql_statement;
 
 GRANT USAGE ON SCHEMA maintenance_schema TO current_user ;
 GRANT SELECT ON ALL TABLES IN SCHEMA maintenance_schema TO current_user ;

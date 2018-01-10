@@ -465,7 +465,7 @@ AS
 SELECT 
 	  n.nspname as schemaname,
       c2.relname as tablename,	  
-	  c.relname as idxname
+	  c.relname as invalid_idxname
 FROM   pg_catalog.pg_class c
 JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid 
 JOIN  pg_catalog.pg_index i ON i.indexrelid = c.oid
@@ -531,9 +531,13 @@ CREATE OR REPLACE VIEW maintenance_schema.rpt_long_queries AS
 		usename, 
 		application_name, 
 		client_addr, 
-		query_start - now() as duration  
- FROM pg_stat_activity WHERE EXTRACT (seconds FROM  query_start - now()) > 100;   
-   
+		query_start - now() as duration_query,
+		xact_start - now() as duration_xact
+ FROM pg_stat_activity 
+ WHERE EXTRACT (seconds FROM  query_start - now()) > 100
+ AND EXTRACT (seconds FROM  xact_start - now()) > 100;
+
+ 
 -- report of activity summary 
 -- from wiki
 CREATE OR REPLACE VIEW maintenance_schema.rpt_activity_summary AS 
@@ -638,7 +642,7 @@ AND schemaname NOT IN ('information_schema','pg_catalog')
 
 -- report unused columns 
 CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_unused AS 
-SELECT nspname, relname, attname, typname,
+SELECT nspname, relname, attname as column_name, typname,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
     CASE 1 WHEN stakind1 THEN array_to_string(stavalues1, ',', '*') WHEN stakind2 THEN array_to_string(stavalues2, ',', '*') END AS "values"
@@ -735,7 +739,7 @@ ORDER BY age(relfrozenxid) DESC, pg_total_relation_size(oid) DESC
 
 --autovaccum freeze_max_age
 CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_database_oldest AS
-select datname, max(age(datfrozenxid)) as oldest 
+select datname, max(age(datfrozenxid)) as dboldest_fxid
 from pg_database  
 GROUP BY datname
 ORDER BY max(age(datfrozenxid)) DESC;
@@ -752,21 +756,22 @@ ORDER BY age(relfrozenxid) DESC LIMIT 20;
 
 
 -- REPLICATION 
--- up to 9.6 
+--  for v10 only
 CREATE OR REPLACE VIEW maintenance_schema.rpt_replication AS 
 SELECT 
 		pg_is_in_recovery() as isinrecovery,
-		pg_last_xlog_replay_location() as last_xloglocation, 
+		pg_last_wal_replay_location() as last_wallocation, 
 		pg_last_xact_replay_timestamp() as last_xact_ts,
-		pg_xlog_location_diff(pg_stat_replication.sent_location, pg_stat_replication.replay_location) as lag_in_bytes,
+		pg_wal_location_diff(pg_stat_replication.sent_location, pg_stat_replication.replay_location) as lag_in_bytes,
 		CASE 
-			WHEN pg_last_xlog_receive_location() = pg_last_xlog_replay_location()
+			WHEN pg_last_wal_receive_location() = pg_last_wal_replay_location()
             THEN 0
             ELSE EXTRACT (EPOCH FROM now() - pg_last_xact_replay_timestamp())
         END AS log_delay
 FROM pg_stat_replication		;
 
 -- ARCHIVING .ready files ALERT
+-- for v10 only 
 CREATE OR REPLACE VIEW maintenance_schema.rpt_archive_ready AS 
 SELECT 
 		count(*) as nbreadyfiles, 
@@ -776,7 +781,7 @@ SELECT
 		  ELSE 'NORMAL'  
 		END AS alert_level
 FROM (
-	SELECT pg_ls_dir('pg_xlog/archive_status') AS files ) AS archstat_files
+	SELECT pg_ls_dir('pg_wal/archive_status') AS files ) AS archstat_files
 WHERE files like '%ready' ;
 
 
@@ -1119,11 +1124,13 @@ CREATE OR REPLACE VIEW maintenance_schema.dba_stop_lqueries AS
 		usename, 
 		application_name, 
 		client_addr, 
-		query_start - now() as duration,
+		query_start - now() as duration_query,
+		xact_start - now() as duration_xact, 
 		format('select pg_cancel_backend(%I) ;', pid) as cancel_statement, 
 		format('select pg_terminate_backend(%I) ;', pid) as terminate_statement
- FROM pg_stat_activity WHERE EXTRACT (seconds FROM  query_start - now()) > 100;   
- 
+ FROM pg_stat_activity 
+ WHERE EXTRACT (seconds FROM  query_start - now()) > 100
+ AND EXTRACT (seconds FROM  xact_start - now()) > 100; 
    
 -- Statements to DROP redundant indexes
 CREATE OR REPLACE VIEW maintenance_schema.dba_drop_idx_redundant 
@@ -1193,6 +1200,7 @@ select relname, reloptions
 from pg_class 
 where reloptions is not null ;
 
+
 ---------------------------------------
 -- FULL REPORT 
 ---------------------------------------
@@ -1208,6 +1216,7 @@ FROM (SELECT
 		AND viewname NOT LIKE 'dba%'
 		AND viewname NOT LIKE 'full%' )AS viewlist
 ORDER BY sql_statement;
+
 
 
 GRANT USAGE ON SCHEMA maintenance_schema TO current_user ;
