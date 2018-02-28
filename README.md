@@ -44,7 +44,8 @@ or
 - users not connected since (...), passwords too short (?), too old (?), 0.0.0.0/0, peer, trust, md5, dump of GRANTS/REVOKE, see github of slardiere for the dump
 - ~~encoding : to perfect (add server side...)~~
 - perfect row filtering on expect_av, foreign_fk (others?),
-- fix ioguix query
+- fix ioguix query (fine bloat)
+- add pg_blocking_pids for v0.0.3
 - pg_statio_user_table : ratio/size in `pg_size_pretty()` of read/hit
 - add extensions pgstattuple, others ?
 - Version compatibility handling for 9.3 and 9.4 ~~(and 10 for replication)~~
