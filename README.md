@@ -41,7 +41,7 @@ or
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
 - audit check : pg_hba.conf, unix socket,...  security in general, (others?) -> On the way for version 0.0.4
 - info from \l+ regarding encodingn and collation
-- users not connected since (...), passwords too short (?), too old (?), 0.0.0.0/0, peer, trust, md5
+- users not connected since (...), passwords too short (?), too old (?), 0.0.0.0/0, peer, trust, md5, dump of GRANTS/REVOKE
 - ~~encoding : to perfect (add server side...)~~
 - perfect row filtering on expect_av, foreign_fk (others?),
 - add extensions pgstattuple, others ?
