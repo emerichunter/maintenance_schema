@@ -68,7 +68,7 @@ VERSION COMPATIBILITY
 
 All views should be compatible from 9.5 and up.
 Some views might be compatible starting with 9.4.
-I will try to maintain all current supported versions.
+I will try to maintain all currently supported versions.
 
 
 
