@@ -51,14 +51,14 @@ Bloat and fine bloat views might give significant different results (1 order of 
 - add `pg_blocking_pids` for v0.0.3
 - pg_statio_user_table : ratio/size in `pg_size_pretty()` of read/hit
 - frozenxid
-`SELECT c.oid::regclass as table_name, 
-               greatest(age(c.relfrozenxid), age(t.reflfrozenxid)) as age
+`SELECT c.oid::regclass as table_name, greatest(age(c.relfrozenxid), age(t.relfrozenxid)) as age 
 FROM pg_class c 
-LEFT JOIN pg_class t ON c.reltoastrelid = t.oid
-WHERE c.relkind IN ('r', 'm') ;`
+LEFT JOIN pg_class t ON c.reltoastrelid = t.oid 
+WHERE c.relkind IN ('r', 'm') 
+ORDER BY age DESC;` (9.3 and higher!)
 - check `archive_command` does not return error
 - add extensions pgstattuple, others ?
-- Version compatibility handling for 9.3 and 9.4 ~~(and 10 for replication)~~
+- Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
 
