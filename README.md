@@ -3,7 +3,8 @@
 A DBA framework for postgres using views. 
 
 * Default is version 0.0.3 intended for PG10. 
-* Version 0.0.2 for versions 9.3 to 9.6.
+* Version 0.0.2 for versions 9.4 to 9.6.
+* Version 0.0.1 for version 9.3 
 
 NOTE: To change version of installation, modify the default version in `maintenance_schema.control` before install.
 
@@ -34,6 +35,8 @@ or
  select sql_statement from maintenance_schema.full_report \gexec
 ~~~
 
+**WARNING**:
+Bloat and fine bloat views might give significant different results (1 order of magnitude for instance). 
 
 
 # **TODOs** :
@@ -44,7 +47,7 @@ or
 - users not connected since (...), passwords too short (?), too old (?), 0.0.0.0/0, peer, trust, md5, dump of GRANTS/REVOKE, see github of slardiere for the dump
 - ~~encoding : to perfect (add server side...)~~
 - perfect row filtering on expect_av, foreign_fk (others?),
-- fix ioguix query (fine bloat)
+- ~~fix ioguix query (fine bloat)~~
 - add `pg_blocking_pids` for v0.0.3
 - pg_statio_user_table : ratio/size in `pg_size_pretty()` of read/hit
 - frozenxid
