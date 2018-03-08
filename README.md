@@ -44,7 +44,7 @@ Bloat and fine bloat views might give significant different results (1 order of 
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
 - audit check : pg_hba.conf, unix socket,...  security in general, (others?) -> On the way for version 0.0.4
 - info from \l+ regarding encodingn and collation
-- users not connected since (...), passwords too short (?), too old (?),hostnossl, host, 0.0.0.0/0, peer, trust, md5 => different extension (with new tables),
+- users not connected since (...), passwords too short (?), too old (?), last login, number of login, last_reset, IP, hostnossl, host, 0.0.0.0/0, peer, trust, md5 => different extension (with new tables),
 - dump of GRANTS/REVOKE, see github of slardiere for the dump
 - ~~encoding : to perfect (add server side...)~~
 - perfect row filtering on expect_av, foreign_fk (others?),
