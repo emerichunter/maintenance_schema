@@ -2,9 +2,9 @@
 
 A DBA framework for postgres using views. 
 
-* Default is version 0.0.3 intended for PG10. 
+* Default is version 0.0.3 intended for PG10 and higher. 
 * Version 0.0.2 for versions 9.4 to 9.6.
-* Version 0.0.1 for version 9.3 
+* Version 0.0.1 for version 9.3.
 
 NOTE: To change version of installation, modify the default version in `maintenance_schema.control` before install.
 
