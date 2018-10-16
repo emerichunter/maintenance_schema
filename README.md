@@ -43,7 +43,7 @@ Bloat and fine bloat views might give significant different results (1 order of 
 - add `ALTER TABLE` statements for autovacuum and autoanalyze based on size
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
 - audit check : pg_hba.conf, unix socket,...  security in general, (others?) -> On the way for version 0.0.4
-- info from \l+ regarding encodingn and collation
+- info from \l+ regarding encoding and collation
 - users not connected since (...), passwords too short (?), too old (?), last login, number of login, last_reset, IP, hostnossl, host, 0.0.0.0/0, peer, trust, md5 => different extension (with new tables),
 - dump of GRANTS/REVOKE, see github of slardiere for the dump
 - ~~encoding : to perfect (add server side...)~~
@@ -59,8 +59,9 @@ WHERE c.relkind IN ('r', 'm')
 ORDER BY age DESC;` (9.3 and higher!)
 - check `archive_command` does not return error
 - add extensions pgstattuple, others ?
+- probe for replication delay (kb and time) `select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  from pg_stat_replication ;`
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
-- Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
+- Handling of query type/lo ck type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
 - add table_summary : 
 `SELECT
