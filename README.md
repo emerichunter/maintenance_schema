@@ -119,6 +119,40 @@ Where
  OR  n_tup_hot_upd  != 0
   ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;
   `
+  
+  COPY/PASTE to 0.0.3
+  `-- encoding for every database
+-- Non UTF8 only  
+ SELECT datname, pg_encoding_to_char(encoding) as encoding, datcollate, datctype 
+ FROM pg_database 
+ WHERE  datallowconn 
+ AND NOT datistemplate
+ AND pg_encoding_to_char(encoding) != 'UTF8';
+ 
+ 
+ 
+ -- locks  with pg_blocking_pids v9.6+ locked and locking sessions
+ SELECT 
+     pgsa_blocked.usename as blocked_user, 
+     pgsa_blocked.query as blocked_query,
+     pgsa_blocked.datname, 
+     pgsa_blocked.wait_event_type, 
+     pgsa_blocked.wait_event,  
+     pgsa_blocked.pid as blocked_pid, 
+     pg_blocking_pids(pgsa_blocked.pid) AS blocking_pids,
+     pgsa_blocking.usename as blocking_user, 
+     pgsa_blocking.query as blocking_query
+ FROM pg_stat_activity AS pgsa_blocked
+ JOIN pg_stat_activity AS pgsa_blocking 
+   ON  pgsa_blocking.pid = ANY ( SELECT unnest(pg_blocking_pids(pgsa_blocked.pid))) ;
+ -- WHERE TRUE = ANY (SELECT unnest(pg_blocking_pids(pgsa_blocked.pid)) IS NOT NULL);
+ 
+ -- UNLOGGED Tables 
+ SELECT relname FROM pg_class WHERE relpersistence = 'u';
+ 
+ -- progress of vacuum 9.6+
+ select * from pg_stat_progress_vacuum ;
+ `
 
 VERSION COMPATIBILITY
 =====================
