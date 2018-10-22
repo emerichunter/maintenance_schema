@@ -121,6 +121,7 @@ Where
   `
   
   COPY/PASTE to 0.0.3
+  
   `-- encoding for every database
 -- Non UTF8 only  
  SELECT datname, pg_encoding_to_char(encoding) as encoding, datcollate, datctype 
@@ -151,8 +152,7 @@ Where
  SELECT relname FROM pg_class WHERE relpersistence = 'u';
  
  -- progress of vacuum 9.6+
- select * from pg_stat_progress_vacuum ;
- `
+ select * from pg_stat_progress_vacuum ;`
 
 VERSION COMPATIBILITY
 =====================
