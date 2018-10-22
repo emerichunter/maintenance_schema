@@ -51,6 +51,7 @@ Bloat and fine bloat views might give significant different results (1 order of 
 - ~~fix ioguix query (fine bloat)~~
 - add `pg_blocking_pids` for v0.0.3
 - pg_statio_user_table : ratio/size in `pg_size_pretty()` of read/hit
+- list of UNLOGGED tables `SELECT relname FROM pg_class WHERE relpersistence = 'u';`
 - frozenxid
 `SELECT c.oid::regclass as table_name, greatest(age(c.relfrozenxid), age(t.relfrozenxid)) as age 
 FROM pg_class c 
