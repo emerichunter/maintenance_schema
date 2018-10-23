@@ -10,6 +10,18 @@
 
 CREATE SCHEMA IF NOT EXISTS maintenance_schema AUTHORIZATION current_user;
 
+-- UNLOGGED Tables
+CREATE OR REPLACE VIEW maintenance_schema.rpt_unlogged_objects AS
+SELECT 
+    relname as unlogged_object, 
+    CASE 
+	    WHEN relkind = 'r' THEN 'table'
+		WHEN relkind = 'i' THEN 'index'
+		WHEN relkind = 't' THEN 'toast table'
+    END relation_kind,
+pg_size_pretty(relpages::numeric) as relation_size
+FROM pg_class
+WHERE relpersistence = 'u';
 
 -- VIEW last analyze et vacuum avec filtres sur toutes les tables/bases du cluster
 CREATE OR REPLACE VIEW maintenance_schema.rpt_last_analyze_vacuum AS
@@ -575,6 +587,63 @@ right join
 where
 not datistemplate and d.datname != 'postgres';
 
+--report summary of activity on tables 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_activity_summary_tables AS
+SELECT
+ schemaname::text, relname::text,
+  seq_tup_read as readfromtscan, 
+  idx_tup_fetch as readfromiscan, 
+  n_tup_ins as inserted, 
+  n_tup_upd as updated, 
+  n_tup_del as deleted, 
+  n_tup_hot_upd as hotupdated,
+ seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd as total_transactions,
+ 
+ case when
+   (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * seq_tup_read / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as select_t_pct,
+ 
+ case when
+   (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * idx_tup_fetch / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as select_i_pct,
+
+ case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then
+ round(1000000.0 * n_tup_ins / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as insert_pct ,
+
+ case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then
+ round(1000000.0 * n_tup_upd / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as update_pct,
+
+ case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * n_tup_del / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as delete_pct,
+ 
+  case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * n_tup_hot_upd / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as hotupd_pct
+from
+  pg_stat_user_tables
+Where 
+   seq_tup_read     != 0
+ OR  idx_tup_fetch  != 0
+ OR  n_tup_ins      != 0
+ OR  n_tup_upd      != 0
+ OR  n_tup_del      != 0
+ OR  n_tup_hot_upd  != 0
+  ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;
+  
+
 -- report of expected candidate for autovacuum 
 -- corrected for 9.4+
 CREATE OR REPLACE VIEW maintenance_schema.rpt_autovacuum_candidates
@@ -903,7 +972,29 @@ AS
                 * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
 		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_scale_factor = 0.1,autovacuum_analyze_scale_factor = 0.05 ) ;',psut.relname)
          ELSE 'Nothing to do'
-     END AS sql_statement_std,
+     END AS sql_statement_scales,
+	 CASE
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_threshold = 25,autovacuum_analyze_threshold = 10) ;', psut.relname)
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_vacuum_threshold = 25,autovacuum_analyze_threshold = 10) ;',psut.relname)
+         ELSE 'Nothing to do'
+     END AS sql_statement_thresholds,
+	 CASE
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_max_workers = 6,autovacuum_naptime = 15s ) ;', psut.relname)
+		 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
+		 THEN FORMAT('ALTER TABLE %I SET (autovacuum_max_workers = 6,autovacuum_naptime = 15s ) ;',psut.relname)
+         ELSE 'Nothing to do'
+     END AS sql_statement_monoinstance,
 	 CASE 
 	 	 WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
@@ -1171,7 +1262,7 @@ JOIN indexes j
 	
 	
 --------------------------------
--- DEV : PENDING
+-- AUDIT : in the works...
 --------------------------------
 
 -- encoding
@@ -1183,8 +1274,19 @@ AS
  and setting!= 'UTF8' 
 ;
 
+
+-- encoding for every database
+-- Non UTF8 only  
+CREATE OR REPLACE VIEW maintenance_schema.audit_encoding_db
+AS
+ SELECT datname, pg_encoding_to_char(encoding) as encoding, datcollate, datctype 
+ FROM pg_database 
+ WHERE  datallowconn 
+ AND NOT datistemplate
+ AND pg_encoding_to_char(encoding) != 'UTF8';
+
 ---------------------------------
---SETTINGS: WHAT STICKS OUT
+-- SETTINGS: WHAT STICKS OUT
 ---------------------------------
 
 CREATE OR REPLACE VIEW maintenance_schema.audit_settings 

@@ -10,6 +10,18 @@
 
 CREATE SCHEMA IF NOT EXISTS maintenance_schema AUTHORIZATION current_user;
 
+-- UNLOGGED Tables
+CREATE OR REPLACE VIEW maintenance_schema.rpt_unlogged_objects AS
+SELECT 
+    relname as unlogged_object, 
+    CASE 
+	    WHEN relkind = 'r' THEN 'table'
+		WHEN relkind = 'i' THEN 'index'
+		WHEN relkind = 't' THEN 'toast table'
+    END relation_kind,
+pg_size_pretty(relpages::numeric) as relation_size
+FROM pg_class
+WHERE relpersistence = 'u';
 
 -- VIEW last analyze et vacuum avec filtres sur toutes les tables/bases du cluster
 CREATE OR REPLACE VIEW maintenance_schema.rpt_last_analyze_vacuum AS
@@ -496,31 +508,22 @@ create or replace VIEW maintenance_schema.rpt_lock_time AS
     ORDER BY a.query_start;
 
 
--- report on locks with locking and locked transactions
-create or replace VIEW maintenance_schema.rpt_locks_blockin_n_blockd AS
-SELECT blocked_locks.pid     AS blocked_pid,
-         blocked_activity.usename  AS blocked_user,
-         blocking_locks.pid     AS blocking_pid,
-         blocking_activity.usename AS blocking_user,
-         blocked_activity.query    AS blocked_statement,
-         blocking_activity.query   AS current_statement_in_blocking_process
-   FROM  pg_catalog.pg_locks         blocked_locks
-    JOIN pg_catalog.pg_stat_activity blocked_activity  ON blocked_activity.pid = blocked_locks.pid
-    JOIN pg_catalog.pg_locks         blocking_locks 
-        ON blocking_locks.locktype = blocked_locks.locktype
-        AND blocking_locks.DATABASE IS NOT DISTINCT FROM blocked_locks.DATABASE
-        AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
-        AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
-        AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
-        AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
-        AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
-        AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
-        AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
-        AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
-        AND blocking_locks.pid != blocked_locks.pid
- 
-    JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
-   WHERE NOT blocked_locks.GRANTED;
+-- locks  with pg_blocking_pids v9.6+ locked and locking sessions
+CREATE OR REPLACE VIEW maintenance_schema.rpt_locks_blocking_pids AS
+ SELECT 
+     pgsa_blocked.usename as blocked_user, 
+     pgsa_blocked.query as blocked_query,
+     pgsa_blocked.datname, 
+     pgsa_blocked.wait_event_type, 
+     pgsa_blocked.wait_event,  
+     pgsa_blocked.pid as blocked_pid, 
+     pg_blocking_pids(pgsa_blocked.pid) AS blocking_pids,
+     pgsa_blocking.usename as blocking_user, 
+     pgsa_blocking.query as blocking_query
+ FROM pg_stat_activity AS pgsa_blocked
+ JOIN pg_stat_activity AS pgsa_blocking 
+   ON  pgsa_blocking.pid = ANY ( SELECT unnest(pg_blocking_pids(pgsa_blocked.pid))) ;
+
 
 -- report of long queries >100s
 CREATE OR REPLACE VIEW maintenance_schema.rpt_long_queries AS 
@@ -1083,36 +1086,25 @@ CREATE OR REPLACE VIEW maintenance_schema.dba_unlock_time AS
 	 a.usename != current_user
     ORDER BY a.query_start;
 
-	
--- Statements to unlock either locking or locked transaction
-CREATE OR REPLACE VIEW maintenance_schema.dba_unlock_deadlocks AS
-SELECT blocked_locks.pid     AS blocked_pid,
-         blocked_activity.usename  AS blocked_user,
-         blocking_locks.pid     AS blocking_pid,
-         blocking_activity.usename AS blocking_user,
-         blocked_activity.query    AS blocked_statement,
-         blocking_activity.query   AS current_statement_in_blocking_process, 
-		 format('select pg_cancel_backend(%I) ;', blocked_locks.pid) as cancel_blocked_statement,
-		 format('select pg_terminate_backend(%I) ;', blocked_locks.pid) as terminate_blocked_statement,
-		 format('select pg_cancel_backend(%I) ;', blocking_locks.pid) as cancel_blocking_statement,
-		 format('select pg_terminate_backend(%I) ;', blocking_locks.pid) as terminate_blocking_statement
-   FROM  pg_catalog.pg_locks         blocked_locks
-    JOIN pg_catalog.pg_stat_activity blocked_activity  ON blocked_activity.pid = blocked_locks.pid
-    JOIN pg_catalog.pg_locks         blocking_locks 
-        ON blocking_locks.locktype = blocked_locks.locktype
-        AND blocking_locks.DATABASE IS NOT DISTINCT FROM blocked_locks.DATABASE
-        AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
-        AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
-        AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
-        AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
-        AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
-        AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
-        AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
-        AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
-        AND blocking_locks.pid != blocked_locks.pid
- 
-    JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
-   WHERE NOT blocked_locks.GRANTED;
+
+
+-- Statement to unlock locks  with pg_blocking_pids v9.6+ locked and locking sessions
+CREATE OR REPLACE VIEW maintenance_schema.dba_locks_blocking_pids AS
+ SELECT
+     pgsa_blocked.usename as blocked_user,
+     pgsa_blocked.datname,
+     pgsa_blocked.wait_event_type,
+     pgsa_blocked.wait_event,
+     pgsa_blocked.pid as blocked_pid,
+     pg_blocking_pids(pgsa_blocked.pid) AS blocking_pids,
+                 format('select pg_cancel_backend(%I) ;', pgsa_blocked.pid ) as cancel_blocked_statement,
+                 format('select pg_terminate_backend(%I) ;', pgsa_blocked.pid ) as terminate_blocked_statement,
+                 format('select pg_cancel_backend(%I) ;', pg_blocking_pids(pgsa_blocked.pid)) as cancel_blocking_statement,
+                 format('select pg_terminate_backend(%I) ;', pg_blocking_pids(pgsa_blocked.pid)) as terminate_blocking_statement
+ FROM pg_stat_activity AS pgsa_blocked
+ JOIN pg_stat_activity AS pgsa_blocking
+   ON  pgsa_blocking.pid = ANY ( SELECT unnest(pg_blocking_pids(pgsa_blocked.pid))) ;
+
 
 -- CANCEL/TERMINATE long queries >100s
 -- TODO : lock handling only on SELECTs and state only idle_in_transaction
@@ -1172,11 +1164,11 @@ JOIN indexes j
 	
 	
 --------------------------------
--- DEV : PENDING
+-- AUDIT : in the works...
 --------------------------------
 
 -- encoding
-CREATE OR REPLACE VIEW maintenance_schema.audit_encoding
+CREATE OR REPLACE VIEW maintenance_schema.audit_encoding_setting
 AS
  SELECT name, setting as client_encoding_alert
  from pg_settings
@@ -1184,8 +1176,18 @@ AS
  and setting!= 'UTF8' 
 ;
 
+-- encoding for every database
+-- Non UTF8 only  
+CREATE OR REPLACE VIEW maintenance_schema.audit_encoding_db
+AS
+ SELECT datname, pg_encoding_to_char(encoding) as encoding, datcollate, datctype 
+ FROM pg_database 
+ WHERE  datallowconn 
+ AND NOT datistemplate
+ AND pg_encoding_to_char(encoding) != 'UTF8';
+
 ---------------------------------
---SETTINGS: WHAT STICKS OUT
+-- SETTINGS: WHAT STICKS OUT
 ---------------------------------
 
 CREATE OR REPLACE VIEW maintenance_schema.audit_settings 
