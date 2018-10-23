@@ -19,7 +19,7 @@ SELECT
 		WHEN relkind = 'i' THEN 'index'
 		WHEN relkind = 't' THEN 'toast table'
     END relation_kind,
-pg_size_pretty(relpages::numeric) as relation_size
+pg_size_pretty(relpages::bigint*8*1024) as relation_size
 FROM pg_class
 WHERE relpersistence = 'u';
 
