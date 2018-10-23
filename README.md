@@ -40,8 +40,9 @@ Bloat and fine bloat views might give significant different results (1 order of 
 
 
 # **TODOs** :
-- add `ALTER TABLE` statements for autovacuum and autoanalyze based on size
+- add `ALTER TABLE` statements for autovacuum and autoanalyze based on size (currently abandonned)
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
+https://blog.pgaddict.com/posts/common-issues-with-planner-statistics
 - audit check : pg_hba.conf, unix socket,...  security in general, (others?) -> On the way for version 0.0.4
 - info from \l+ regarding encoding and collation
 - users not connected since (...), passwords too short (?), too old (?), last login, number of login, last_reset, IP, hostnossl, host, 0.0.0.0/0, peer, trust, md5 => different extension (with new tables),
@@ -49,9 +50,9 @@ Bloat and fine bloat views might give significant different results (1 order of 
 - ~~encoding : to perfect (add server side...)~~
 - perfect row filtering on expect_av, foreign_fk (others?),
 - ~~fix ioguix query (fine bloat)~~
-- add `pg_blocking_pids` for v0.0.3
+- ~~add `pg_blocking_pids` for v0.0.3~~
 - pg_statio_user_table : ratio/size in `pg_size_pretty()` of read/hit
-- list of UNLOGGED tables `SELECT relname FROM pg_class WHERE relpersistence = 'u';`
+- ~~list of UNLOGGED tables `SELECT relname FROM pg_class WHERE relpersistence = 'u';`~~
 - frozenxid
 `SELECT c.oid::regclass as table_name, greatest(age(c.relfrozenxid), age(t.relfrozenxid)) as age 
 FROM pg_class c 
@@ -120,15 +121,14 @@ Where
   ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;
   `
   
-  COPY/PASTE to 0.0.3
-  
+  ~~COPY/PASTE to 0.0.3   
   `-- encoding for every database
 -- Non UTF8 only  
  SELECT datname, pg_encoding_to_char(encoding) as encoding, datcollate, datctype 
  FROM pg_database 
  WHERE  datallowconn 
  AND NOT datistemplate
- AND pg_encoding_to_char(encoding) != 'UTF8';
+ AND pg_encoding_to_char(encoding) != 'UTF8';~~
  
  
  
