@@ -24,7 +24,7 @@ Use `CREATE EXTENSION` in the wanted database(s).
 
 ## USAGE of full_report 
 NOTE : use in shell to have a "nice" html report
-`psql -d pgbench -c "select concat(sql_statement , ';') from maintenance_schema.full_report  " | psql -d pgbench -H  -o fullrpt.html`
+`psql -At -d pgbench -c "select concat(sql_statement , ';') from maintenance_schema.full_report  " | psql -d pgbench -H  -o fullrpt.html`
 
 or
 
