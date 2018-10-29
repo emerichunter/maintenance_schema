@@ -146,13 +146,56 @@ Where
  FROM pg_stat_activity AS pgsa_blocked
  JOIN pg_stat_activity AS pgsa_blocking 
    ON  pgsa_blocking.pid = ANY ( SELECT unnest(pg_blocking_pids(pgsa_blocked.pid))) ;
- -- WHERE TRUE = ANY (SELECT unnest(pg_blocking_pids(pgsa_blocked.pid)) IS NOT NULL);
+ -- WHERE TRUE = ANY (SELECT unnest(pg_blocking_pids(pgsa_blocked.pid)) IS NOT NULL);`
  
- -- UNLOGGED Tables 
- SELECT relname FROM pg_class WHERE relpersistence = 'u';
+ -- ~~UNLOGGED Tables 
+ `SELECT relname FROM pg_class WHERE relpersistence = 'u';~~`
  
- -- progress of vacuum 9.6+
- select * from pg_stat_progress_vacuum ;`
+ -- progress of vacuum 9.6+ (??)
+ `select * from pg_stat_progress_vacuum ;`
+ 
+ -- finer AV threshold and expect
+ `SELECT psut.relname,
+     to_char(psut.last_vacuum, 'YYYY-MM-DD HH24:MI') as last_vacuum,
+     to_char(psut.last_autovacuum, 'YYYY-MM-DD HH24:MI') as last_autovacuum,
+     to_char(pg_class.reltuples, '9G999G999G999') AS n_tup,
+     to_char(psut.n_dead_tup, '9G999G999G999') AS dead_tup,
+         to_char(psut.n_mod_since_analyze, '9G999G999G999') AS mod_slastnlz,
+     to_char(CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+         + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+            * pg_class.reltuples), '9G999G999G999') AS av_threshold,
+     CASE
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup
+         THEN 'Autovacuum is coming...'
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze
+         THEN 'Autovacuum is coming...'
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) > psut.n_dead_tup*1.5
+         THEN 'Consider Tuning AV!'
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) > psut.n_mod_since_analyze*1.5
+         THEN 'Consider Tuning AV!'
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) > psut.n_dead_tup
+         THEN 'Autovacuum is here!'
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) > psut.n_mod_since_analyze
+         THEN 'Autovacuum is here!'
+         ELSE ''
+     END AS expect_av
+ FROM pg_stat_user_tables psut
+     JOIN pg_class on psut.relid = pg_class.oid
+ WHERE pg_class.reltuples > 10000
+   AND (psut.n_dead_tup >1000 OR psut.n_mod_since_analyze>1000)
+ ORDER BY n_tup DESC, dead_tup DESC ;`
 
 VERSION COMPATIBILITY
 =====================
