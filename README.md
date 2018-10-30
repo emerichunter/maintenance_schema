@@ -155,7 +155,7 @@ Where
  `select * from pg_stat_progress_vacuum ;`
  
  -- finer AV threshold and expect
- `SELECT psut.relname,
+ ` SELECT psut.relname,
      to_char(psut.last_vacuum, 'YYYY-MM-DD HH24:MI') as last_vacuum,
      to_char(psut.last_autovacuum, 'YYYY-MM-DD HH24:MI') as last_autovacuum,
      to_char(pg_class.reltuples, '9G999G999G999') AS n_tup,
@@ -165,6 +165,14 @@ Where
          + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
             * pg_class.reltuples), '9G999G999G999') AS av_threshold,
      CASE
+	     WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_dead_tup*1.5
+         THEN 'Consider Tuning AV!'
+         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
+             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
+                * pg_class.reltuples) < psut.n_mod_since_analyze*1.5
+         THEN 'Consider Tuning AV!'
          WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_dead_tup
@@ -173,22 +181,7 @@ Where
              + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
                 * pg_class.reltuples) < psut.n_mod_since_analyze
          THEN 'Autovacuum is coming...'
-         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
-             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
-                * pg_class.reltuples) > psut.n_dead_tup*1.5
-         THEN 'Consider Tuning AV!'
-         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
-             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
-                * pg_class.reltuples) > psut.n_mod_since_analyze*1.5
-         THEN 'Consider Tuning AV!'
-         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
-             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
-                * pg_class.reltuples) > psut.n_dead_tup
-         THEN 'Autovacuum is here!'
-         WHEN CAST(current_setting('autovacuum_vacuum_threshold') AS bigint)
-             + (CAST(current_setting('autovacuum_vacuum_scale_factor') AS numeric)
-                * pg_class.reltuples) > psut.n_mod_since_analyze
-         THEN 'Autovacuum is here!'
+
          ELSE ''
      END AS expect_av
  FROM pg_stat_user_tables psut
