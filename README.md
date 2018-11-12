@@ -42,9 +42,9 @@ Bloat and fine bloat views might give significant different results (1 order of 
 # **TODOs** :
 - add `ALTER TABLE` statements for autovacuum and autoanalyze based on size (currently abandonned)
 - add `ALTER TABLE... SET STATISTICS` if the need is confirmed, watch table/column special statistics in audit
-https://blog.pgaddict.com/posts/common-issues-with-planner-statistics
+https://blog.pgaddict.com/posts/common-issues-with-planner-statistics (currently abandonned)
 - audit check : pg_hba.conf, unix socket,...  security in general, (others?) -> On the way for version 0.0.4
-- info from \l+ regarding encoding and collation
+- ~~info from \l+ regarding encoding and collation~~
 - users not connected since (...), passwords too short (?), too old (?), last login, number of login, last_reset, IP, hostnossl, host, 0.0.0.0/0, peer, trust, md5 => different extension (with new tables),
 - dump of GRANTS/REVOKE, see github of slardiere for the dump
 - ~~encoding : to perfect (add server side...)~~
@@ -65,7 +65,7 @@ ORDER BY age DESC;` (9.3 and higher!)
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lo ck type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
-- add table_summary : 
+- add table_summary (ready): 
 `SELECT
  schemaname::text, relname::text,
   seq_tup_read as readfromtscan, 
