@@ -148,7 +148,7 @@ Where
    ON  pgsa_blocking.pid = ANY ( SELECT unnest(pg_blocking_pids(pgsa_blocked.pid))) ;
  -- WHERE TRUE = ANY (SELECT unnest(pg_blocking_pids(pgsa_blocked.pid)) IS NOT NULL);`
  
- - ~~UNLOGGED Tables  `SELECT relname FROM pg_class WHERE relpersistence = 'u';~~`
+ - ~~UNLOGGED Tables  `SELECT relname FROM pg_class WHERE relpersistence = 'u';`~~
  
  - progress of vacuum 9.6+ (??) `select * from pg_stat_progress_vacuum ;`
  
