@@ -66,6 +66,7 @@ ORDER BY age DESC;` (9.3 and higher!)
 - Handling of query type/lo ck type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
 - add table_summary (ready): 
+
 `SELECT
  schemaname::text, relname::text,
   seq_tup_read as readfromtscan, 
@@ -118,8 +119,7 @@ Where
  OR  n_tup_upd      != 0
  OR  n_tup_del      != 0
  OR  n_tup_hot_upd  != 0
-  ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;
-  `
+  ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;`
   
   ~~COPY/PASTE to 0.0.3   
   `-- encoding for every database
@@ -128,12 +128,12 @@ Where
  FROM pg_database 
  WHERE  datallowconn 
  AND NOT datistemplate
- AND pg_encoding_to_char(encoding) != 'UTF8';~~
+ AND pg_encoding_to_char(encoding) != 'UTF8';`~~
  
  
  
- -- locks  with pg_blocking_pids v9.6+ locked and locking sessions
- SELECT 
+ - locks  with pg_blocking_pids v9.6+ locked and locking sessions
+ `SELECT 
      pgsa_blocked.usename as blocked_user, 
      pgsa_blocked.query as blocked_query,
      pgsa_blocked.datname, 
