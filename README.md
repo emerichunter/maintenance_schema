@@ -148,14 +148,14 @@ Where
    ON  pgsa_blocking.pid = ANY ( SELECT unnest(pg_blocking_pids(pgsa_blocked.pid))) ;
  -- WHERE TRUE = ANY (SELECT unnest(pg_blocking_pids(pgsa_blocked.pid)) IS NOT NULL);`
  
- -- ~~UNLOGGED Tables 
+ - ~~UNLOGGED Tables 
  `SELECT relname FROM pg_class WHERE relpersistence = 'u';~~`
  
- -- progress of vacuum 9.6+ (??)
+ - progress of vacuum 9.6+ (??)
  `select * from pg_stat_progress_vacuum ;`
  
- -- finer AV threshold and expect
- ` SELECT psut.relname,
+ - finer AV threshold and expect
+ `SELECT psut.relname,
      to_char(psut.last_vacuum, 'YYYY-MM-DD HH24:MI') as last_vacuum,
      to_char(psut.last_autovacuum, 'YYYY-MM-DD HH24:MI') as last_autovacuum,
      to_char(pg_class.reltuples, '9G999G999G999') AS n_tup,
