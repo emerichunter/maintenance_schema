@@ -379,6 +379,7 @@ SELECT  referencing_tbl,
         pg_size_pretty(referenced_tbl_bytes) AS referenced_tbl_size,
         suggestion
 FROM y
+WHERE referencing_tbl_bytes > 10000000
 ORDER BY
     referencing_tbl_bytes DESC,
     referenced_tbl_bytes DESC,
