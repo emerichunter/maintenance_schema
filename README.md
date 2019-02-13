@@ -65,7 +65,7 @@ ORDER BY age DESC;` (9.3 and higher!)
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lo ck type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
-- ~~add table_summary (ready): ~~
+- ~~add table_summary (ready):~~
 
 ~~`SELECT
  schemaname::text, relname::text,
@@ -76,36 +76,30 @@ ORDER BY age DESC;` (9.3 and higher!)
   n_tup_del as deleted, 
   n_tup_hot_upd as hotupdated,
  seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd as total_transactions,
- 
  case when
    (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
  then round(1000000.0 * seq_tup_read / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
  else 0
  end::numeric(1000, 4) as select_t_pct,
- 
  case when
    (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
  then round(1000000.0 * idx_tup_fetch / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
  else 0
  end::numeric(1000, 4) as select_i_pct,
-
  case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
  then
  round(1000000.0 * n_tup_ins / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
  else 0
  end::numeric(1000, 4) as insert_pct ,
-
  case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
  then
  round(1000000.0 * n_tup_upd / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
  else 0
  end::numeric(1000, 4) as update_pct,
-
  case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
  then round(1000000.0 * n_tup_del / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
  else 0
  end::numeric(1000, 4) as delete_pct,
- 
   case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
  then round(1000000.0 * n_tup_hot_upd / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
  else 0
@@ -119,8 +113,7 @@ Where
  OR  n_tup_upd      != 0
  OR  n_tup_del      != 0
  OR  n_tup_hot_upd  != 0
-  ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;`
-  ~~
+  ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;`~~
   
   ~~COPY/PASTE to 0.0.3   
   `-- encoding for every database
