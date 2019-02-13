@@ -65,9 +65,9 @@ ORDER BY age DESC;` (9.3 and higher!)
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lo ck type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
-- add table_summary (ready): 
+- ~~add table_summary (ready): ~~
 
-`SELECT
+~~`SELECT
  schemaname::text, relname::text,
   seq_tup_read as readfromtscan, 
   idx_tup_fetch as readfromiscan, 
@@ -120,6 +120,7 @@ Where
  OR  n_tup_del      != 0
  OR  n_tup_hot_upd  != 0
   ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;`
+  ~~
   
   ~~COPY/PASTE to 0.0.3   
   `-- encoding for every database
