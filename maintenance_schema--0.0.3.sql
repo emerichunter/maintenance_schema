@@ -579,6 +579,63 @@ right join
 where
 not datistemplate and d.datname != 'postgres';
 
+--report summary of activity on tables 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_activity_summary_tables AS
+SELECT
+ schemaname::text, relname::text,
+  seq_tup_read as readfromtscan, 
+  idx_tup_fetch as readfromiscan, 
+  n_tup_ins as inserted, 
+  n_tup_upd as updated, 
+  n_tup_del as deleted, 
+  n_tup_hot_upd as hotupdated,
+ seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd as total_transactions,
+ 
+ case when
+   (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * seq_tup_read / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as select_t_pct,
+ 
+ case when
+   (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * idx_tup_fetch / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as select_i_pct,
+
+ case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then
+ round(1000000.0 * n_tup_ins / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as insert_pct ,
+
+ case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then
+ round(1000000.0 * n_tup_upd / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as update_pct,
+
+ case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * n_tup_del / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as delete_pct,
+ 
+  case when (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd) > 0
+ then round(1000000.0 * n_tup_hot_upd / (seq_tup_read + idx_tup_fetch + n_tup_ins + n_tup_upd + n_tup_del  + n_tup_hot_upd)) / 10000
+ else 0
+ end::numeric(1000, 4) as hotupd_pct
+from
+  pg_stat_user_tables
+Where 
+   seq_tup_read     != 0
+ OR  idx_tup_fetch  != 0
+ OR  n_tup_ins      != 0
+ OR  n_tup_upd      != 0
+ OR  n_tup_del      != 0
+ OR  n_tup_hot_upd  != 0
+ORDER BY (seq_tup_read + idx_tup_fetch) DESC, n_tup_ins DESC, n_tup_upd DESC, n_tup_del DESC ;					    
+					    
+					    
 -- report of expected candidate for autovacuum 
 -- corrected for 9.4+
 CREATE OR REPLACE VIEW maintenance_schema.rpt_autovacuum_candidates
