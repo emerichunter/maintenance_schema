@@ -262,8 +262,8 @@ ORDER BY 2,3,4;
 CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_unused
 AS
 SELECT 
-	pg_sui.relname, 
-	indexrelname, 
+	pg_sui.relname as tbl_name,
+	indexrelname as unused_idx_name, 
 	pg_c.reltuples ,
 	pg_sui.idx_scan as idx_scan_count,  
 	pg_sut.idx_scan as tot_idx_scan_table, 
@@ -274,7 +274,7 @@ JOIN pg_stat_user_tables pg_sut ON pg_c.relname = pg_sut.relname
 JOIN pg_indexes pg_is ON pg_sui.indexrelname=pg_is.indexname
 WHERE (pg_sui.idx_scan = 0 OR (pg_sut.idx_scan < pg_sut.seq_scan AND  pg_sui.idx_scan < pg_sut.seq_scan) )
   AND pg_sut.seq_scan <> 0     
-  AND pg_c.reltuples > 500
+  -- AND pg_c.reltuples > 500
   AND pg_is.indexdef  !~* 'unique' 
   AND seq_scan <> (date_part('day', now()) - date_part('day', GREATEST(last_analyze,last_autoanalyze )))+1
 ORDER BY relname
@@ -284,7 +284,7 @@ ORDER BY relname
 -- report of most full scanned tables: missing indexes
 CREATE OR REPLACE VIEW maintenance_schema.rpt_mostfullscaned
 AS
-SELECT pg_sut.relname as nom_table, seq_scan, COALESCE(seq_tup_read,0) as fullscan_tuples,
+SELECT pg_sut.relname as tbl_name, seq_scan, COALESCE(seq_tup_read,0) as fullscan_tuples,
                 COALESCE(idx_scan,0) as idx_scan, COALESCE(idx_tup_fetch,0) as idxscan_tuples,
                 COALESCE(ROUND((seq_scan*1.0)/(NULLIF(idx_scan,0)*1.0),2),0) as ratio_scan,
                 COALESCE(ROUND((seq_tup_read*1.0)/(NULLIF(idx_tup_fetch,0)*1.0),2),0) as ratio_tup,
@@ -437,10 +437,10 @@ ORDER BY pclsc.relname ;
 CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_wtoomanylines
 AS
 SELECT 
-		pg_sui.relname, indexrelname, idx_scan, idx_tup_read, idx_tup_fetch, pg_c.reltuples as nb_lignes_table,
-		idx_tup_read/pg_c.reltuples/idx_scan as tx_efficacite,
-		idx_tup_read/idx_scan*100 as tx_scan_read,
-		idx_tup_fetch/idx_scan*100 as tx_scan_fetch
+		pg_sui.relname, indexrelname, idx_scan, idx_tup_read, idx_tup_fetch, pg_c.reltuples as n_tbl_rows,
+		idx_tup_read/pg_c.reltuples/idx_scan as efficiency_rate,
+		idx_tup_read/idx_scan*100 as pct_scan_read,
+		idx_tup_fetch/idx_scan*100 as pct_scan_fetch
 FROM pg_stat_user_indexes pg_sui, pg_class pg_c
 WHERE pg_c.relname = pg_sui.relname
 AND idx_scan <> 0
@@ -454,7 +454,7 @@ ORDER BY idx_tup_read/idx_scan*100 DESC
 -- report of duplicate indexes
 CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_duplicate
 AS
-SELECT c.relname, 
+SELECT c.relname as tbl_w_dup_idx, 
 		pg_size_pretty(SUM(pg_relation_size(idx))::BIGINT) AS SIZE,
        (array_agg(idx))[1] AS idx1, (array_agg(idx))[2] AS idx2,
        (array_agg(idx))[3] AS idx3, (array_agg(idx))[4] AS idx4
@@ -680,7 +680,7 @@ AS
 CREATE OR REPLACE VIEW maintenance_schema.rpt_pk_missing AS
 select 
  tbl.table_schema, 
- tbl.table_name
+ tbl.tblname_pk_missing
 from information_schema.tables tbl
 where table_type = 'BASE TABLE'
   and table_schema not in ('pg_catalog', 'information_schema')
@@ -692,7 +692,7 @@ where table_type = 'BASE TABLE'
 
 -- Tables with neither pk nor any index 
 CREATE OR REPLACE VIEW maintenance_schema.rpt_idx_missing AS
- SELECT relid, schemaname, relname, n_live_tup
+ SELECT relid, schemaname, relname as tbl_wo_idx, n_live_tup
 from pg_stat_user_tables
 where relname NOT IN (select relname from pg_stat_user_indexes )
 AND schemaname NOT IN ('information_schema','pg_catalog')
@@ -704,7 +704,7 @@ AND schemaname NOT IN ('information_schema','pg_catalog')
 -- report useless columns 
 -- Columns that have no more than 1 value in said column					    
 CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_unused AS 
-SELECT nspname, relname, attname as column_name, typname,
+SELECT nspname as schema_name, relname as table_name, attname as useless_column_name, typname as data_type,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
     CASE 1 WHEN stakind1 THEN array_to_string(stavalues1, ',', '*') WHEN stakind2 THEN array_to_string(stavalues2, ',', '*') END AS "values"
@@ -766,10 +766,10 @@ AND NOT i.indisreplident  ;
 -- pending wrap-around 
 -- from gsmith
 
-CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_wraparound_approching AS
+CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_wraparound_approaching AS
 SELECT
-  nspname,
-  CASE WHEN relkind='t' THEN toastname ELSE relname END AS relname,
+  nspname as schema_name,
+  CASE WHEN relkind='t' THEN toastname ELSE relname END AS relation_fxid_approach,
   CASE WHEN relkind='t' THEN 'Toast' ELSE 'Table' END AS kind,
   pg_size_pretty(pg_relation_size(oid)) as table_sz,
   pg_size_pretty(pg_total_relation_size(oid)) as total_sz,
@@ -1001,7 +1001,7 @@ AS
 	JOIN pg_indexes pg_is ON pg_sui.indexrelname=pg_is.indexname
 	WHERE (pg_sui.idx_scan = 0 OR (pg_sut.idx_scan < pg_sut.seq_scan AND  pg_sui.idx_scan < pg_sut.seq_scan) )
 	AND pg_sut.seq_scan <> 0     
-	AND pg_c.reltuples > 500
+	-- AND pg_c.reltuples > 500
 	AND pg_is.indexdef  !~* 'unique' 
 	AND seq_scan <> (date_part('day', now()) - date_part('day', GREATEST(last_analyze,last_autoanalyze )))+1
 	ORDER BY relname
@@ -1010,7 +1010,7 @@ AS
 --single statement index suggestion
 CREATE OR REPLACE VIEW maintenance_schema.dba_create_idx_suggestions
 AS	
-		SELECT pg_sut.relname as nom_table, 
+		SELECT pg_sut.relname as tbl_name, 
 			   FORMAT('CREATE INDEX CONCURRENTLY IF NOT EXISTS %I_%I_idx ON %I.%I (%I)',pg_sut.relname,  pg_a.attname,schemaname, pg_sut.relname,  pg_a.attname) as sql_statement 
 
         FROM pg_stat_user_tables pg_sut 
@@ -1079,7 +1079,7 @@ AS
 SELECT 
 	  n.nspname as schemaname,
       c2.relname as tablename,	  
-	  c.relname as idxname,
+	  c.relname as invalid_idxname,
 	  FORMAT('ANALYZE VERBOSE %I.%I ', n.nspname,c2.relname) as analyze_statement,
 	  FORMAT('REINDEX INDEX %I.%I ', n.nspname,c.relname) as reindex_statement
 FROM   pg_catalog.pg_class c
@@ -1093,7 +1093,7 @@ WHERE  (i.indisvalid = false OR i.indisready = false) ;
 -- create indexes for all columns on tables without any index
 -- USE CAREFULLY !
 CREATE OR REPLACE VIEW maintenance_schema.dba_create_idx_all_missing AS
- SELECT relid, schemaname, pgsut.relname, n_live_tup,
+ SELECT relid, schemaname, pgsut.relname as tbl_wo_idx, n_live_tup,
  FORMAT('CREATE INDEX CONCURRENTLY IF NOT EXISTS %I_%I_idx ON %I.%I (%I)',pgsut.relname,   attname,schemaname, pgsut.relname,  attname)
 from pg_stat_user_tables pgsut
 JOIN pg_class c ON c.oid = pgsut.relid
@@ -1107,7 +1107,7 @@ AND pgsut.n_live_tup> 500 -- minimum number of tuples to make sense
 
 -- drop useless columns 
 CREATE OR REPLACE VIEW maintenance_schema.dba_drop_columns_useless AS 
-SELECT nspname as schema_name, relname as table_name, attname as column_name, typname as data_type,
+SELECT nspname as schema_name, relname as table_name, attname as useless_column_name, typname as data_type,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
     CASE 1 WHEN stakind1 THEN array_to_string(stavalues1, ',', '*') WHEN stakind2 THEN array_to_string(stavalues2, ',', '*') END AS "values",
