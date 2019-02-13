@@ -711,7 +711,7 @@ AND schemaname NOT IN ('information_schema','pg_catalog')
 -- report useless columns 
 -- Columns that have no more than 1 value in said column
 CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_useless AS 
-SELECT nspname, relname, attname, typname,
+SELECT nspname as schema_name, relname as table_name, attname as column_name, typname as data_type,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
     CASE 1 WHEN stakind1 THEN array_to_string(stavalues1, ',', '*') WHEN stakind2 THEN array_to_string(stavalues2, ',', '*') END AS "values"
@@ -1135,7 +1135,7 @@ AND pgsut.n_live_tup> 500 -- minimum number of tuples to make sense
 
 -- drop  useless columns 
 CREATE OR REPLACE VIEW maintenance_schema.dba_drop_columns_useless AS 
-SELECT nspname, relname, attname, typname,
+SELECT nspname as schema_name, relname as table_name, attname as column_name, typname as data_type,
     (stanullfrac*100)::INT AS null_percent,
     CASE WHEN stadistinct >= 0 THEN stadistinct ELSE abs(stadistinct)*reltuples END AS "distinct",
     CASE 1 WHEN stakind1 THEN array_to_string(stavalues1, ',', '*') WHEN stakind2 THEN array_to_string(stavalues2, ',', '*') END AS "values",
