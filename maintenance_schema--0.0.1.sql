@@ -391,22 +391,22 @@ ORDER BY
 -- Duplicate foreign keys
 CREATE OR REPLACE VIEW maintenance_schema.rpt_fk_duplicate AS
 SELECT
-    pc.conname as constraint_name, 
+    pc.conname as constraint_name,
     pclsc.relname as child_table,
     pac.attname as child_column,
     pclsp.relname as parent_table,
-    pap.attname as parent_column,   
+    pap.attname as parent_column,
     nspname as schema_name
-FROM 
+FROM
     (
     SELECT
          connamespace,
-		 conname, 
-		 unnest(conkey) as "conkey", 
-		 unnest(confkey) as "confkey" , 
-		 conrelid, 
-		 confrelid, 
-		 contype
+                 conname,
+                 unnest(conkey) as "conkey",
+                 unnest(confkey) as "confkey" ,
+                 conrelid,
+                 confrelid,
+                 contype
      FROM
         pg_constraint
     ) pc
@@ -417,6 +417,24 @@ FROM
     JOIN pg_attribute pap ON pc.confkey = pap.attnum and pap.attrelid = pclsp.oid
 
 ORDER BY pclsc.relname ;
+
+-- Useless unique constraints on FK or PK
+CREATE OR REPLACE VIEW maintenance_schema.rpt_useless_uconstraint AS
+SELECT
+       pgc1.conrelid, pgcl.relname, pgc1.conname, pgc1.contype
+  FROM pg_constraint pgc1
+FULL JOIN
+         pg_constraint pgc2
+      ON pgc1.conrelid = pgc2.conrelid
+JOIN
+         pg_class pgcl
+      ON pgcl.oid=pgc1.conrelid
+
+WHERE pgc1.conkey = pgc2.conkey
+  AND pgc1.contype ='u'
+
+GROUP BY pgc1.conrelid, pgcl.relname, pgc1.conname, pgc1.contype
+HAVING count(pgc1.conname) >1;
 
 	
 -- report of indexes returning too many lines 
@@ -1089,6 +1107,25 @@ AND schemaname NOT IN ('information_schema','pg_catalog')
 AND pgsut.n_live_tup> 500 -- minimum number of tuples to make sense
 ;
 
+-- Useless unique constraints on FK or PK
+CREATE OR REPLACE VIEW maintenance_schema.dba_drop_useless_uconst AS
+SELECT
+       pgc1.conrelid, pgcl.relname, pgc1.conname, pgc1.contype,
+       FORMAT('ALTER TABLE IF EXISTS %I.%I DROP CONSTRAINT IF EXISTS %I ', ns.nspname,pgcl.relname, pgc1.conname ) AS SQL_statement
+  FROM pg_constraint pgc1
+FULL JOIN
+         pg_constraint pgc2
+      ON pgc1.conrelid = pgc2.conrelid
+JOIN
+         pg_class pgcl
+      ON pgcl.oid=pgc1.conrelid
+
+JOIN pg_namespace ns ON (ns.oid=pgc1.connamespace)
+WHERE pgc1.conkey = pgc2.conkey
+  AND pgc1.contype ='u'
+
+GROUP BY pgc1.conrelid, pgcl.relname, pgc1.conname, pgc1.contype, ns.nspname
+HAVING count(pgc1.conname) >1;
 
 
 -- drop useless columns 
