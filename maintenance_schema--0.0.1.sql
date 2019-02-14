@@ -265,7 +265,7 @@ WHERE (pg_sui.idx_scan = 0 OR (pg_sut.idx_scan < pg_sut.seq_scan AND  pg_sui.idx
   -- AND pg_c.reltuples > 500
   AND pg_is.indexdef  !~* 'unique' 
   AND seq_scan <> (date_part('day', now()) - date_part('day', GREATEST(last_analyze,last_autoanalyze )))+1
-ORDER BY relname
+ORDER BY pg_sui.relname
 ;
 		
 	
@@ -665,7 +665,7 @@ AS
 CREATE OR REPLACE VIEW maintenance_schema.rpt_pk_missing AS
 select 
  tbl.table_schema, 
- tbl.tblname_pk_missing
+ tbl.table_name as tblname_pk_missing
 from information_schema.tables tbl
 where table_type = 'BASE TABLE'
   and table_schema not in ('pg_catalog', 'information_schema')
