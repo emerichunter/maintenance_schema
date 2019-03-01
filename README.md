@@ -206,6 +206,41 @@ FROM
 GROUP BY child_table, child_column, parent_table, parent_column, schema_name HAVING COUNT(*)>1
 ORDER BY child_table, child_column`
 
+- Deduplication : 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_duplicate_rows AS
+-- WITH list_tables as (
+--  SELECT FORMAT('%I.%I', nspname, relname) FROM pg_class pgc JOIN pg_namespace pgn ON pgc.relnamespace = pgn.oid )
+-- )
+--SELECT
+--FORMAT('SELECT distinct * FROM %I.%I HAVING COUNT(*) >1 ', nspname, relname ) AS SQL_statement
+--FROM (
+ SELECT FORMAT('SELECT distinct * FROM %I.%I HAVING COUNT(*) >1', nspname, relname) as sql_statement FROM pg_class pgc JOIN pg_namespace pgn ON pgc.relnamespace = pgn.oid
+--ORDER BY sql_statement;
+SELECT pgc1.connamespace, pgc1.conrelid::regclass, pgc2.relname, pgc1.conkey FROM pg_constraint pgc1 JOIN pg_class pgc2 ON pgc1.conrelid = pgc2.oid JOIN pg_class pgc3 ON pgc3.oid::text = pgc1.conkey::text WHERE pgc1.contype ='p' ;
+
+ SELECT FORMAT('SELECT array_agg(%I), count(*) FROM %I.%I GROUP BY %I HAVING COUNT(*) >1',column_name, column_name, table_schema , table_name) as sql_statement FROM (
+-- clefs primaires
+        select tc.table_schema, tc.table_name, kc.column_name
+from information_schema.table_constraints tc
+  join information_schema.key_column_usage kc
+    on kc.table_name = tc.table_name and kc.table_schema = tc.table_schema and kc.constraint_name = tc.constraint_name
+where tc.constraint_type = 'PRIMARY KEY'
+  and kc.ordinal_position is not null
+order by tc.table_schema,
+         tc.table_name,
+         kc.position_in_unique_constraint
+) list_pk
+
+-- colonnes
+SELECT *
+FROM information_schema.columns
+WHERE table_schema = 'your_schema'
+  AND table_name   = 'your_table'
+
+-- voir les lignes dupliquées
+SELECT  content, count(content), array_agg(id)  FROM public.dummy GROUP BY content HAVING count(content) >1;
+
+
 VERSION COMPATIBILITY
 =====================
 
