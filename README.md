@@ -181,8 +181,10 @@ Where
  WHERE pg_class.reltuples > 10000
    AND (psut.n_dead_tup >1000 OR psut.n_mod_since_analyze>1000)
  ORDER BY n_tup DESC, dead_tup DESC ;`
- 
- - change fk duplicate to list only duplicates 
+
+ - add schema to seqrep view !
+
+ - ~~change fk duplicate to list only duplicates ~~
  `SELECT
     array_agg(pc.conname) as duplicated_constraints, 
     pclsc.relname as child_table,
@@ -237,7 +239,7 @@ FROM information_schema.columns
 WHERE table_schema = 'your_schema'
   AND table_name   = 'your_table'
 
--- voir les lignes dupliquées
+-- see duplicate lines/rows/tuples
 SELECT  content, count(content), array_agg(id)  FROM public.dummy GROUP BY content HAVING count(content) >1;
 
 
