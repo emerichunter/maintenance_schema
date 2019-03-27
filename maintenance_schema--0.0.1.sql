@@ -729,7 +729,7 @@ ORDER BY nspname, relname, attname
 -- report on filling of sequences
 -- use select * from seqrep \gexec to execute !
 CREATE OR REPLACE VIEW maintenance_schema.rpt_seqrep AS 
-select FORMAT('select sequence_name, last_value, increment_by, max_value,  (increment_by::float*last_value::float/max_value::float)::numeric as pct from %I', sequence_name) 
+select FORMAT('select sequence_name, last_value, increment_by, max_value,  CASE WHEN round((increment_by::float*last_value::float/max_value::float)::numeric,2)>50 THEN round((increment_by::float*last_value::float/max_value::float)::numeric,2) ELSE 0 END as pct from %I.%I ', sequence_schema,sequence_name) 
 from  information_schema.sequences  ;
 
 -- redundant indexes : TODO 9.3
