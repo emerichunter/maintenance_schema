@@ -869,7 +869,7 @@ WHERE files like '%ready' ;
 
 -- tables with a single column (might need a more detailed column if PK, if nonPK relation why bother?)
 CREATE OR REPLACE VIEW maintenance_schema.rpt_tbl_single_column AS 
-SELECT table_catalog,table_schema,table_name, count(column_name) 
+SELECT table_catalog,table_schema,table_name as table_single_column, count(column_name) 
 FROM information_schema.columns 
 WHERE table_schema NOT IN ('information_schema', 'maintenance_schema') 
 GROUP BY table_catalog,table_schema,table_name 
@@ -878,7 +878,7 @@ HAVING COUNT (column_name)= 1 ;
 -- unused tables
 CREATE OR REPLACE VIEW maintenance_schema.rpt_tbl_unused
 AS 
-SELECT schemaname, relname 
+SELECT schemaname, relname as unused_table 
 FROM pg_stat_user_tables
 WHERE (idx_tup_fetch + seq_tup_read)= 0; -- tables where no tuple is read either from seqscan or idx
 
@@ -887,7 +887,7 @@ WHERE (idx_tup_fetch + seq_tup_read)= 0; -- tables where no tuple is read either
 CREATE OR REPLACE VIEW maintenance_schema.rpt_tbl_same_name AS
 SELECT
 n.nspname as "Schema",
-c.relname as "Name" FROM pg_catalog.pg_class c
+c.relname as "Table with the same Name" FROM pg_catalog.pg_class c
 LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 WHERE c.relname IN (SELECT relname FROM pg_catalog.pg_class
 WHERE relkind IN ('r')
@@ -898,7 +898,7 @@ ORDER BY n.nspname,c.relname;
 
 -- empty tables
 CREATE OR REPLACE VIEW maintenance_schema.rpt_tbl_empty AS
-SELECT schemaname, relname 
+SELECT schemaname, relname as empty_table 
 FROM pg_stat_user_tables
 WHERE n_live_tup = 0;
 
