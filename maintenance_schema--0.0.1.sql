@@ -881,7 +881,7 @@ ORDER BY n.nspname,c.relname;
 
 -- empty tables
 CREATE OR REPLACE VIEW maintenance_schema.rpt_tbl_empty AS
-SELECT relname 
+SELECT schemaname, relname 
 FROM pg_stat_user_tables
 WHERE n_live_tup = 0;
 
