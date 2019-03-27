@@ -23,8 +23,32 @@ WHERE c.relkind IN ('r', 'm')
 ORDER BY age DESC;` (9.3 and higher!)
 - check `archive_command` does not return error
 - duplicate tables
-- duplicate columns (denormalisation)
+- duplicate columns (denormalisation) incremental name columns
 - tables with a single column
+- unused tables
+~~~~sql
+Select relname from
+pg_stat_user_tables
+WHERE (idx_tup_fetch + seq_tup_read)= 0; -- tables where no tuple is read either from seqscan or idx
+~~~~
+- schema with tables of the same name (check for same structure)
+~~~~sql
+SELECT
+n.nspname as "Schema",
+c.relname as "Name" FROM pg_catalog.pg_class c
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relname IN (SELECT relname FROM pg_catalog.pg_class
+WHERE relkind IN ('r')
+GROUP BY relname
+Having count(relname) > 1)
+ORDER BY 2,1;
+~~~~
+- empty tables
+~~~~sql
+Select relname from
+pg_stat_user_tables
+WHERE n_live_tup = 0;
+~~~~
 - add extensions pgstattuple, others ?
 - ~~probe for replication delay (kb and time)~~ `select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  from pg_stat_replication ;`
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
