@@ -133,7 +133,7 @@ Where
  
  - ~~UNLOGGED Tables  `SELECT relname FROM pg_class WHERE relpersistence = 'u';`~~
  
- - ~~progress of vacuum 9.6+ (??) `select * from pg_stat_progress_vacuum ;` ~~ 
+ - ~~progress of vacuum 9.6+ (??) `select * from pg_stat_progress_vacuum ;`~~ 
  USELESS
  
  - finer AV threshold and expect
@@ -176,7 +176,7 @@ Where
 
  - ~~add schema to seqrep view to be used in multi schema environment!~~
 
- - ~~change fk duplicate to list only duplicates ~~
+ - ~~change fk duplicate to list only duplicates~~
  ~~~~sql
  SELECT
     array_agg(pc.conname) as duplicated_constraints, 
