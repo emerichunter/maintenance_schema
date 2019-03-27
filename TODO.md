@@ -174,7 +174,7 @@ Where
  ORDER BY n_tup DESC, dead_tup DESC ;
  ~~~~
 
- - add schema to seqrep view to be used in multi schema environment!
+ - ~~add schema to seqrep view to be used in multi schema environment!~~
 
  - ~~change fk duplicate to list only duplicates ~~
  ~~~~sql
