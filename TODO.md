@@ -50,7 +50,28 @@ pg_stat_user_tables
 WHERE n_live_tup = 0;
 ~~~~
 - add extensions pgstattuple, others ?
-- ~~probe for replication delay (kb and time)~~ `select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  from pg_stat_replication ;`
+- ~~probe for replication delay (kb and time)~~ 
+~~~~sql
+select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  
+from pg_stat_replication ;
+~~~~
+
+- replication conflicts : 
+~~~~sql
+select datname as dbname_w_replica_conflicts, confl_tablespace,confl_lock,confl_snapshot,confl_bufferpin,confl_deadlock 
+from pg_stat_database_conflicts 
+where datname not like 'template%' 
+and (confl_tablespace + confl_lock + confl_snapshot + confl_bufferpin + confl_deadlock)>0;
+~~~~
+
+- count for commits, rollbacks and deadlocks when deadlocks are found :
+~~~~sql
+select datname as dbname_w_deadlocks, numbackends, xact_commit, xact_rollback, deadlocks 
+from pg_stat_database 
+where datname not like 'template%' 
+and deadlocks>0 ;
+~~~~
+
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
