@@ -71,7 +71,15 @@ from pg_stat_database
 where datname not like 'template%' 
 and deadlocks>0 ;
 ~~~~
-
+- alert on temp files with current work_mem setting :
+~~~~sql
+select datname as dbname_w_tmpfiles, 
+temp_files as nb_tmp_files, 
+pg_size_pretty(temp_bytes) as tmp_fsize, 
+pg_size_pretty(temp_bytes/temp_files) as avg_tmpfsize, 
+( select setting::numeric || unit  from pg_settings where name = 'work_mem') as current_work_mem 
+from pg_stat_database where temp_files>0;
+~~~~
 - Version compatibility handling for ~~9.3~~ and 9.4 ~~(and 10 for replication)~~
 - Handling of query type/lock type/state/wait event on long running queries dba view (restrictions needed)
 - Need name of view for each table from full report
