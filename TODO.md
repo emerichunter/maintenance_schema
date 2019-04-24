@@ -49,7 +49,22 @@ Select relname from
 pg_stat_user_tables
 WHERE n_live_tup = 0;
 ~~~~
-- add extensions pgstattuple, others ?
+- add extensions pgstattuple, pg_stat_statements, others... ?
+- pg_stat_statement 
+   - unused columns
+   - missing indexes
+   - most time/IO/CPU consuming queries :
+ ~~~~sql
+SELECT  substring(query, 1, 50) AS short_query,
+round(total_time::numeric, 2) AS total_time,
+calls,
+round(mean_time::numeric, 2) AS mean,
+round((100 * total_time /
+sum(total_time::numeric) OVER ())::numeric, 2) AS percentage_cpu
+FROM    pg_stat_statements
+ORDER BY total_time DESC
+LIMIT 20;
+ ~~~~
 - ~~probe for replication delay (kb and time)~~ 
 ~~~~sql
 select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  
