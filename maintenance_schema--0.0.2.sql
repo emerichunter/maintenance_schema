@@ -904,6 +904,7 @@ WHERE n_live_tup = 0;
 
 
 -- replication conflicts
+CREATE OR REPLACE VIEW maintenance_schema.rpt_db_replication_conflicts AS
 SELECT datname as dbname_w_replica_conflicts, 
 		confl_tablespace,
 		confl_lock,
@@ -916,6 +917,7 @@ AND (confl_tablespace + confl_lock + confl_snapshot + confl_bufferpin + confl_de
 
 
 --  count for commits, rollbacks and deadlocks when deadlocks are found 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_db_deadlocks_count AS
 SELECT 
       datname as dbname_w_deadlocks, 
       numbackends, 
@@ -927,7 +929,9 @@ WHERE datname NOT LIKE 'template%'
 AND deadlocks>0 ;
 
 
+
 -- alert on temp files with current work_mem setting 
+CREATE OR REPLACE VIEW maintenance_schema.rpt_db_tmpfsize AS
 SELECT datname as dbname_w_tmpfiles, 
 temp_files as nb_tmp_files, 
 pg_size_pretty(temp_bytes) as tmp_fsize, 
