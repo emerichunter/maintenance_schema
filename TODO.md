@@ -65,6 +65,28 @@ FROM    pg_stat_statements
 ORDER BY total_time DESC
 LIMIT 20;
  ~~~~
+   - start with these queries :
+~~~~sql
+SELECT sum(total_time) AS total_time,
+sum(blk_read_time + blk_write_time) AS io_time,
+sum(total_time - blk_read_time - blk_write_time) AS cpu_time,
+sum(calls) AS ncalls,
+sum(rows) AS total_rows
+FROM pg_stat_statements
+WHERE dbid IN (SELECT oid FROM pg_database WHERE datname=current_database());
+-- AND 
+WITH ttl AS (
+SELECT sum(total_time) AS total_time, sum(blk_read_time + blk_write_time) AS io_time,
+sum(total_time - blk_read_time - blk_write_time) AS cpu_time,
+sum(calls) AS ncalls, sum(rows) AS total_rows
+FROM pg_stat_statements WHERE dbid IN (
+SELECT oid FROM pg_database WHERE datname=current_database())
+)
+SELECT *,(pss.total_time-pss.blk_read_time-pss.blk_write_time)/ttl.cpu_time*100 cpu_pct
+FROM pg_stat_statements pss, ttl
+WHERE (pss.total_time-pss.blk_read_time-pss.blk_write_time)/ttl.cpu_time >= 0.05
+ORDER BY pss.total_time-pss.blk_read_time-pss.blk_write_time DESC LIMIT 1;
+~~~~
 - ~~probe for replication delay (kb and time)~~ 
 ~~~~sql
 select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  
