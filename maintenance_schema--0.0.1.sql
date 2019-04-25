@@ -885,6 +885,40 @@ SELECT schemaname, relname as empty_table
 FROM pg_stat_user_tables
 WHERE n_live_tup = 0;
 
+			  
+-- replication conflicts
+SELECT datname as dbname_w_replica_conflicts, 
+		confl_tablespace,
+		confl_lock,
+		confl_snapshot,
+		confl_bufferpin,
+		confl_deadlock 
+FROM pg_stat_database_conflicts 
+WHERE datname NOT LIKE 'template%' 
+AND (confl_tablespace + confl_lock + confl_snapshot + confl_bufferpin + confl_deadlock)>0;
+
+
+--  count for commits, rollbacks and deadlocks when deadlocks are found 
+SELECT 
+      datname as dbname_w_deadlocks, 
+      numbackends, 
+      xact_commit, 
+      xact_rollback, 
+deadlocks 
+FROM pg_stat_database 
+WHERE datname NOT LIKE 'template%' 
+AND deadlocks>0 ;
+
+
+
+-- alert on temp files with current work_mem setting 
+SELECT datname as dbname_w_tmpfiles, 
+temp_files as nb_tmp_files, 
+pg_size_pretty(temp_bytes) as tmp_fsize, 
+pg_size_pretty(temp_bytes/temp_files) as avg_tmpfsize, 
+( select setting::numeric || unit  from pg_settings where name = 'work_mem') as current_work_mem 
+FROM pg_stat_database 
+WHERE temp_files>0;
 
 
 --[EXPERIMENTAL] Alignment Padding. How many bytes can be saved if columns are ordered better?
