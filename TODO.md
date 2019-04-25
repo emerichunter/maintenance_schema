@@ -53,6 +53,7 @@ WHERE n_live_tup = 0;
 - pg_stat_statement 
    - unused columns
    - missing indexes
+   - most calls, total_time, avg, and stddev (biggest gap between short and long)
    - most time/IO/CPU consuming queries :
  ~~~~sql
 SELECT  substring(query, 1, 50) AS short_query,
@@ -65,7 +66,7 @@ FROM    pg_stat_statements
 ORDER BY total_time DESC
 LIMIT 20;
  ~~~~
-   - start with these queries :
+   - start with these queries (finer):
 ~~~~sql
 SELECT sum(total_time) AS total_time,
 sum(blk_read_time + blk_write_time) AS io_time,
