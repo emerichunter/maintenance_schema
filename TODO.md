@@ -25,13 +25,13 @@ ORDER BY age DESC;` (9.3 and higher!)
 - duplicate tables
 - duplicate columns (denormalisation) incremental name columns
 - tables with a single column
-- unused tables
+- ~~unused tables~~
 ~~~~sql
 Select relname from
 pg_stat_user_tables
 WHERE (idx_tup_fetch + seq_tup_read)= 0; -- tables where no tuple is read either from seqscan or idx
 ~~~~
-- schema with tables of the same name (check for same structure)
+- ~~schema with tables of the same name (check for same structure)~~
 ~~~~sql
 SELECT
 n.nspname as "Schema",
@@ -43,7 +43,7 @@ GROUP BY relname
 Having count(relname) > 1)
 ORDER BY 2,1;
 ~~~~
-- empty tables
+- ~~empty tables~~
 ~~~~sql
 Select relname from
 pg_stat_user_tables
@@ -282,7 +282,7 @@ WHERE table_schema = 'your_schema'
 SELECT  content, count(content), array_agg(id)  FROM public.dummy GROUP BY content HAVING count(content) >1;
 ~~~~
 
-Alignment padding for columns : 
+~~Alignment padding for columns : ~~
 ~~~~sql
 --[EXPERIMENTAL] Alignment Padding. How many bytes can be saved if columns are ordered better?
 
