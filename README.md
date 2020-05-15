@@ -50,4 +50,54 @@ Some views might be compatible starting with 9.4.
 I will try to maintain all currently supported versions.
 
 
+WRAPAROUND 
+========================
 
+Percentage to monitor (from pgmonitor) / database
+~~~~sql
+WITH max_age AS ( 
+    SELECT 2000000000 as max_old_xid
+        , setting AS autovacuum_freeze_max_age 
+        FROM pg_catalog.pg_settings 
+        WHERE name = 'autovacuum_freeze_max_age' )
+, per_database_stats AS ( 
+    SELECT datname
+        , m.max_old_xid::int
+        , m.autovacuum_freeze_max_age::int
+        , age(d.datfrozenxid) AS oldest_current_xid 
+    FROM pg_catalog.pg_database d 
+    JOIN max_age m ON (true) 
+    WHERE d.datallowconn ) 
+SELECT max(oldest_current_xid) AS oldest_current_xid
+    , max(ROUND(100*(oldest_current_xid/max_old_xid::float))) AS percent_towards_wraparound
+    , max(ROUND(100*(oldest_current_xid/autovacuum_freeze_max_age::float))) AS percent_towards_emergency_autovac 
+FROM per_database_stats;
+~~~~
+
+per table 
+~~~~sql 
+
+SELECT datname
+    , age(datfrozenxid)
+    , current_setting('autovacuum_freeze_max_age') 
+FROM pg_database 
+ORDER BY 2 DESC;
+~~~~
+
+Most urgent tables 
+~~~~sql
+SELECT c.oid::regclass
+    , age(c.relfrozenxid)
+    , pg_size_pretty(pg_total_relation_size(c.oid)) 
+FROM pg_class c
+JOIN pg_namespace n on c.relnamespace = n.oid
+WHERE relkind IN ('r', 't', 'm') 
+AND n.nspname NOT IN ('pg_toast')
+ORDER BY 2 DESC LIMIT 100;
+~~~~
+
+script for vacuum freeze table list one at a time 
+
+~~~~sh
+\t \o /tmp/vacuum.sql select 'vacuum freeze analyze verbose ' || oid::regclass || ';' from pg_class where relkind in ('r', 't', 'm') order by age(relfrozenxid) desc limit 100; \o \t \set ECHO all \i /tmp/vacuum.sql
+~~~~
