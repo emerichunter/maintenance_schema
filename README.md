@@ -101,3 +101,23 @@ script for vacuum freeze table list one at a time
 ~~~~sh
 \t \o /tmp/vacuum.sql select 'vacuum freeze analyze verbose ' || oid::regclass || ';' from pg_class where relkind in ('r', 't', 'm') order by age(relfrozenxid) desc limit 100; \o \t \set ECHO all \i /tmp/vacuum.sql
 ~~~~
+
+
+Monitoring of Barman/archiving/backups
+=======================================
+
+Number of archived WAL files. archived_count should grow steadily and regularly while failed_count should be stable :  
+~~~~sql
+SELECT archived_count, failed_count FROM pg_stat_archiver;
+ archived_count | failed_count
+----------------+--------------
+             99 |            6
+~~~~
+
+The following query shows archive latency. It should be near 0 and never grow indefinitly :
+~~~~sql
+SELECT pg_xlog_location_diff(sent_location, write_location) FROM pg_stat_replication WHERE application_name='barman_receive_wal';
+ pg_xlog_location_diff
+-----------------------
+                     0
+ ~~~~
