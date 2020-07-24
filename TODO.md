@@ -104,7 +104,7 @@ FROM pg_stat_user_tables
 WHERE seq_scan > 0;
 ~~~~
 
-- replication conflicts : 
+- ~~replication conflicts : ~~
 ~~~~sql
 select datname as dbname_w_replica_conflicts, confl_tablespace,confl_lock,confl_snapshot,confl_bufferpin,confl_deadlock 
 from pg_stat_database_conflicts 
@@ -112,14 +112,14 @@ where datname not like 'template%'
 and (confl_tablespace + confl_lock + confl_snapshot + confl_bufferpin + confl_deadlock)>0;
 ~~~~
 
-- count for commits, rollbacks and deadlocks when deadlocks are found :
+- ~~count for commits, rollbacks and deadlocks when deadlocks are found :~~
 ~~~~sql
 select datname as dbname_w_deadlocks, numbackends, xact_commit, xact_rollback, deadlocks 
 from pg_stat_database 
 where datname not like 'template%' 
 and deadlocks>0 ;
 ~~~~
-- alert on temp files with current work_mem setting :
+- ~~alert on temp files with current work_mem setting :~~
 ~~~~sql
 select datname as dbname_w_tmpfiles, 
 temp_files as nb_tmp_files, 
