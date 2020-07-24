@@ -22,9 +22,9 @@ LEFT JOIN pg_class t ON c.reltoastrelid = t.oid
 WHERE c.relkind IN ('r', 'm') 
 ORDER BY age DESC;` (9.3 and higher!)
 - check `archive_command` does not return error
-- duplicate tables
+- duplicate tables (1/ compare structure 2/ compare rows)
 - duplicate columns (denormalisation) incremental name columns
-- tables with a single column
+- ~~tables with a single column~~
 - ~~unused tables~~
 ~~~~sql
 Select relname from
