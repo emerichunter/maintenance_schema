@@ -304,6 +304,16 @@ SELECT pg_sut.relname as tbl_name, seq_scan, COALESCE(seq_tup_read,0) as fullsca
 	ORDER BY seq_scan DESC
 	;
 
+-- simpler version 
+-- By Laurenz Albe (Github) 
+-- Filter bigger tables (at least 500 tuples) an index would not be used if there the table is too small anyway
+CREATE OR REPLACE VIEW maintenance_schema.rpt_perf_idx_missing AS						       
+SELECT relname,
+       seq_scan,
+       seq_tup_read / seq_scan AS tup_per_scan
+FROM pg_stat_user_tables
+WHERE seq_scan > 0;						       
+
 		
 -- report index usage
 -- from wiki
@@ -715,7 +725,8 @@ AND schemaname NOT IN ('information_schema','pg_catalog')
 
 
 -- report useless columns 
--- Columns that have no more than 1 value in said column					    
+-- Columns that have no more than 1 value in said column
+-- needs pg_monitor ROLE					 
 CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_unused AS 
 SELECT nspname as schema_name, relname as table_name, attname as useless_column_name, typname as data_type,
     (stanullfrac*100)::INT AS null_percent,
@@ -733,6 +744,21 @@ WHERE nspname NOT LIKE E'pg\\_%' AND nspname != 'information_schema'
 ORDER BY nspname, relname, attname
 ;
 
+-- null columns (stats only) make sure all rows are null and then should be dropped
+-- CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_null AS
+select schemaname, tablename, attname as null_column, most_common_vals as column_value, null_frac
+from pg_stats
+where null_frac =1 
+and schemaname NOT IN ('pg_catalog','information_schema');
+
+
+-- columns with the same value in all rows (stats only) make sure all rows are null and then should be dropped 
+-- same as rpt_columns_unused without pg_statistics
+-- CREATE OR REPLACE VIEW maintenance_schema.rpt_columns_useless AS
+select schemaname, tablename, attname as unique_column, most_common_vals as column_value
+from pg_stats
+where n_distinct =1
+and schemaname NOT IN ('pg_catalog','information_schema');
 
 
 -- report on filling of sequences
@@ -779,7 +805,6 @@ AND NOT i.indisreplident  ;
 
 -- pending wrap-around 
 -- from gsmith
-
 CREATE OR REPLACE VIEW maintenance_schema.rpt_fxid_wraparound_approaching AS
 SELECT
   nspname as schema_name,
@@ -832,7 +857,7 @@ ORDER BY age(relfrozenxid) DESC LIMIT 20;
 
 
 -- REPLICATION 
---  for v10 only
+--  for v10+ only
 CREATE OR REPLACE VIEW maintenance_schema.rpt_replication AS 
 SELECT 
 		pg_is_in_recovery() as isinrecovery,
@@ -847,7 +872,8 @@ SELECT
 FROM pg_stat_replication		;
 
 -- ARCHIVING .ready files ALERT
--- for v10 only 
+-- for v10+ only 
+-- needs pg_monitor ROLE
 CREATE OR REPLACE VIEW maintenance_schema.rpt_archive_ready AS 
 SELECT 
 		count(*) as nbreadyfiles, 
