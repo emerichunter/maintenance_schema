@@ -93,7 +93,7 @@ ORDER BY pss.total_time-pss.blk_read_time-pss.blk_write_time DESC LIMIT 1;
 select pid, client_addr, pg_wal_lsn_diff( sent_lsn, write_lsn ), pg_wal_lsn_diff( sent_lsn, flush_lsn ), pg_wal_lsn_diff( sent_lsn, replay_lsn ), write_lag, flush_lag, replay_lag  
 from pg_stat_replication ;
 ~~~~
-missing indexes 
+~~missing indexes by perf ~~ 
 ~~~~sql
 -- By Laurenz Albe (Github) 
 -- Filter bigger tables (at least 500 tuples) an index would not be used if there the table is too small anyway
