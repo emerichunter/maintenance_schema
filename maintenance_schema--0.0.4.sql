@@ -308,11 +308,13 @@ SELECT pg_sut.relname as tbl_name, seq_scan, COALESCE(seq_tup_read,0) as fullsca
 -- By Laurenz Albe (Github) 
 -- Filter bigger tables (at least 500 tuples) an index would not be used if there the table is too small anyway
 CREATE OR REPLACE VIEW maintenance_schema.rpt_perf_idx_missing AS						       
-SELECT relname,
+SELECT schemaname, 
+       relname,
        seq_scan,
        seq_tup_read / seq_scan AS tup_per_scan
 FROM pg_stat_user_tables
-WHERE seq_scan > 0;						       
+WHERE seq_scan > 0
+AND n_live_tup > 500;						       
 
 		
 -- report index usage
