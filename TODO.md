@@ -24,6 +24,17 @@ ORDER BY age DESC;` (9.3 and higher!)
 - check `archive_command` does not return error
 - duplicate tables (1/ compare structure 2/ compare rows)
 - duplicate columns (denormalisation) incremental name columns
+- size for all elements of a relation (https://www.2ndquadrant.com/en/blog/optimizing-storage-small-tables-postgresql-12/): 
+~~~~sql
+select
+pg_relation_size(c.oid, 'main') as heap_size,
+pg_relation_size(c.oid, 'fsm') as fsm_size,
+pg_relation_size(c.oid, 'vm') as vm_size,
+pg_relation_size(c.reltoastrelid) as toast_table_size,
+pg_relation_size(i.indexrelid) as toast_index_size
+from pg_class c
+left outer join pg_index i on c.reltoastrelid=i.indrelid ;
+~~~~
 - ~~tables with a single column~~
 - ~~unused tables~~
 ~~~~sql
