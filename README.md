@@ -2,8 +2,8 @@
 
 A DBA framework for postgres using views. 
 
-* 0.0.4 is corrected for PG12
-* Default is version 0.0.3 intended for PG10, PG11 ~~and higher~~. 
+* Default is version 0.0.4 is corrected for PG12 and PG13
+* 0.0.3 intended for PG10 and PG11. 
 * Version 0.0.2 for versions 9.4 to 9.6.
 * Version 0.0.1 for version 9.3.
 
