@@ -326,6 +326,16 @@ WHERE table_schema = 'your_schema'
 SELECT  content, count(content), array_agg(id)  FROM public.dummy GROUP BY content HAVING count(content) >1;
 ~~~~
 
+Find tables which have autvacuum disabled : 
+~~~~sql
+select 
+	relnamespace::regnamespace as schema_name, 
+       relname as table_name
+from 
+	pg_class 
+where 'autovacuum_enabled=false' = any(reloptions);
+~~~~
+
 ~~Alignment padding for columns : ~~
 ~~~~sql
 --[EXPERIMENTAL] Alignment Padding. How many bytes can be saved if columns are ordered better?
