@@ -336,6 +336,17 @@ from
 where 'autovacuum_enabled=false' = any(reloptions);
 ~~~~
 
+Wraparound with percentage 
+~~~~~sql
+select datname, max(age(datfrozenxid)) as dboldest_fxid, pg_settings.setting::int as max_age, 
+round(((pg_settings.setting::numeric - max(age(datfrozenxid)::numeric) )/pg_settings.setting::numeric)*100, 2) as pct_fxid_remaining
+from pg_database  , pg_settings
+WHERE pg_settings.name  = 'autovacuum_freeze_max_age' 
+GROUP BY datname, datminmxid, pg_settings.setting
+ORDER BY max(age(datfrozenxid)) DESC;
+
+~~~~
+
 ~~Alignment padding for columns : ~~
 ~~~~sql
 --[EXPERIMENTAL] Alignment Padding. How many bytes can be saved if columns are ordered better?
