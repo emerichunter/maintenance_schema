@@ -25,6 +25,20 @@ ORDER BY age DESC;` (9.3 and higher!)
 - duplicate tables (1/ compare structure 2/ compare rows)
 - duplicate columns (denormalisation) incremental name columns
 - order by DESC for nb of indexes ` select schemaname, tablename, count(indexname) as nb_idx from pg_indexes group by schemaname, tablename order by 3 desc ;`
+- Table with the most colums : 
+~~~~sql
+select tab.table_schema,
+       tab.table_name,
+       count(*) as columns
+from information_schema.tables tab
+inner join information_schema.columns col
+           on tab.table_schema = col.table_schema
+           and tab.table_name = col.table_name
+where tab.table_schema not in ('information_schema', 'pg_catalog')
+      and tab.table_type = 'BASE TABLE'
+group by tab.table_schema, tab.table_name
+order by count(*) desc;
+~~~~
 - size for all elements of a relation (https://www.2ndquadrant.com/en/blog/optimizing-storage-small-tables-postgresql-12/): 
 ~~~~sql
 select
