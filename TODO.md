@@ -24,6 +24,7 @@ ORDER BY age DESC;` (9.3 and higher!)
 - check `archive_command` does not return error
 - duplicate tables (1/ compare structure 2/ compare rows)
 - duplicate columns (denormalisation) incremental name columns
+- order by DESC for nb of indexes ` select schemaname, tablename, count(indexname) as nb_idx from pg_indexes group by schemaname, tablename order by 3 desc ;`
 - size for all elements of a relation (https://www.2ndquadrant.com/en/blog/optimizing-storage-small-tables-postgresql-12/): 
 ~~~~sql
 select
