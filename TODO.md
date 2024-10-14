@@ -341,7 +341,7 @@ WHERE table_schema = 'your_schema'
 SELECT  content, count(content), array_agg(id)  FROM public.dummy GROUP BY content HAVING count(content) >1;
 ~~~~
 
-Find tables which have autvacuum disabled : 
+Find tables which have autovacuum disabled : 
 ~~~~sql
 select 
 	relnamespace::regnamespace as schema_name, 
@@ -350,7 +350,91 @@ from
 	pg_class 
 where 'autovacuum_enabled=false' = any(reloptions);
 ~~~~
+Tables with the most indexes
 
+~~~~sql
+select tab.table_schema,
+       tab.table_name,
+       count(*) as columns
+from information_schema.tables tab
+inner join information_schema.columns col
+           on tab.table_schema = col.table_schema
+           and tab.table_name = col.table_name
+where tab.table_schema not in ('information_schema', 'pg_catalog')
+      and tab.table_type = 'BASE TABLE'
+group by tab.table_schema, tab.table_name
+order by count(*) desc;
+moozik_pg=> SELECT
+    nsp.nspname AS schema_name,
+    cls.relname AS table_name,
+    COUNT(idx.indexrelid) AS index_count
+FROM
+    pg_class cls
+    JOIN pg_namespace nsp ON cls.relnamespace = nsp.oid
+    JOIN pg_index idx ON cls.oid = idx.indrelid
+WHERE
+    cls.relkind = 'r' -- Only ordinary tables
+    AND nsp.nspname NOT IN ('pg_catalog', 'information_schema') -- Exclude system schemas
+GROUP BY
+    nsp.nspname,
+    cls.relname
+ORDER BY
+    index_count DESC
+LIMIT 10; -- Adjust or remove LIMIT as needed
+
+~~~~
+Columns with the most indexes
+~~~~sql
+SELECT
+    nsp.nspname AS schema_name,
+    cls.relname AS table_name,
+    att.attname AS column_name,
+    COUNT(idx.indexrelid) AS index_count
+FROM
+    pg_class cls
+    JOIN pg_namespace nsp ON cls.relnamespace = nsp.oid
+    JOIN pg_index idx ON cls.oid = idx.indrelid
+    JOIN pg_attribute att ON att.attrelid = cls.oid
+        AND att.attnum = ANY(idx.indkey)
+WHERE
+    cls.relkind = 'r' -- Only ordinary tables
+    AND nsp.nspname NOT IN ('pg_catalog', 'information_schema') -- Exclude system schemas
+    AND NOT att.attisdropped -- Exclude dropped columns
+GROUP BY
+    nsp.nspname,
+    cls.relname,
+    att.attname
+ORDER BY
+    index_count DESC
+LIMIT 10; -- Adjust or remove LIMIT as needed
+
+~~~~
+List all non-system functions, triggers and stored procedures
+~~~~sql
+SELECT
+    n.nspname AS schema_name,
+    p.proname AS function_name,
+    pg_catalog.pg_get_function_arguments(p.oid) AS arguments,
+    pg_catalog.pg_get_function_result(p.oid) AS return_type,
+    CASE
+        WHEN p.prokind = 'a' THEN 'Aggregate Function'
+        WHEN p.prokind = 'w' THEN 'Window Function'
+        WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'Trigger Function'
+        ELSE 'Normal Function'
+    END AS function_type,
+    pg_catalog.pg_get_functiondef(p.oid) AS definition
+FROM
+    pg_catalog.pg_proc p
+    INNER JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+WHERE
+    n.nspname NOT IN ('pg_catalog', 'information_schema')
+    AND p.prokind IN ('f', 'a', 'w') -- 'f' = normal function, 'a' = aggregate, 'w' = window
+    AND pg_catalog.pg_function_is_visible(p.oid)
+ORDER BY
+    schema_name,
+    function_name;
+
+~~~~
 Wraparound with percentage 
 ~~~~~sql
 select datname, max(age(datfrozenxid)) as dboldest_fxid, pg_settings.setting::int as max_age, 
