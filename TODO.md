@@ -482,6 +482,48 @@ ORDER BY
     tc.table_name, 
     tc.constraint_name;
 ~~~~
+List all fk, c, unique, triggers, exclusion constraints (to refine) 
+~~~~sql
+-- Foreign keys, Unique, Check, and Exclusion constraints
+SELECT 
+    conname AS constraint_name, 
+    conrelid::regclass AS table_name, 
+    conkey AS columns, 
+    CASE 
+        WHEN contype = 'f' THEN 'FOREIGN KEY' 
+        WHEN contype = 'u' THEN 'UNIQUE' 
+        WHEN contype = 'c' THEN 'CHECK' 
+        WHEN contype = 'x' THEN 'EXCLUSION' 
+    END AS constraint_type
+FROM 
+    pg_constraint
+JOIN 
+    pg_namespace n ON n.oid = connamespace
+WHERE 
+    contype IN ('f', 'u', 'c', 'x')
+    AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+    AND n.nspname NOT LIKE 'pg_toast%'
+
+UNION
+
+-- Not Null constraints
+SELECT 
+    attname AS constraint_name, 
+    attrelid::regclass AS table_name, 
+    ARRAY[attnum] AS columns,  -- Cast attnum to an array
+    'NOT NULL' AS constraint_type
+FROM 
+    pg_attribute
+JOIN 
+    pg_namespace n ON n.oid = attrelid::regclass::oid
+WHERE 
+    attnotnull = TRUE
+    AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+    AND n.nspname NOT LIKE 'pg_toast%'
+
+ORDER BY 
+    table_name;
+~~~~
 Wraparound with percentage 
 ~~~~~sql
 select datname, max(age(datfrozenxid)) as dboldest_fxid, pg_settings.setting::int as max_age, 
