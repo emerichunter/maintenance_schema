@@ -2,7 +2,11 @@
 
 A DBA framework for postgres using views. 
 
-* Default is version 0.0.4 is corrected for PG12 and PG13
+* Default is version 1.0 (Universal Version)
+  * Automatically detects PostgreSQL version and installs compatible views.
+  * Includes PostgreSQL Consultant Toolkit views (0.0.5 features).
+* Version 0.0.5 (Manual install for specific versions)
+* Version 0.0.4 is corrected for PG12 and PG13
 * 0.0.3 intended for PG10 and PG11. 
 * Version 0.0.2 for versions 9.4 to 9.6.
 * Version 0.0.1 for version 9.3.
@@ -23,7 +27,20 @@ Use `CREATE EXTENSION` in the wanted database(s).
 * `audit_` views serve as warnings 
 * `dba_` views contain DDL/DML statement (just \gexec it !)
 
-## USAGE of full_report 
+## HTML REPORTING
+
+You can generate a comprehensive HTML report using the provided bash script:
+
+```bash
+./generate_report.sh <database_name>
+```
+
+This script uses the new views in version 0.0.5 to create a "DB Audit" report including:
+- Executive Summary (Red Flags)
+- Top Slow Queries
+- Bloat & Vacuum Status
+
+## USAGE of full_report (Legacy)
 NOTE : use in shell to have a "nice" html report
 `psql -At -d pgbench -c "select concat(sql_statement , ';') from maintenance_schema.full_report  " | psql -d pgbench -H  -o fullrpt.html`
 
